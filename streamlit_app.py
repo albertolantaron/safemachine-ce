@@ -90,7 +90,6 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    /* Placa CE Metálica */
     .placa-metalica {
         background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
         border: 3px solid #475569;
@@ -158,16 +157,15 @@ def calcular_plr(severidad, frecuencia, posibilidad):
         else:
             return "PL d" if posibilidad == "P1 (Posible evitarlo)" else "PL e (Máxima Seguridad)"
 
-# --- GESTIÓN DE SESIÓN Y LICENCIAS (DIFERENCIACIÓN 49€ vs 149€) ---
+# --- GESTIÓN DE SESIÓN Y LICENCIAS ---
 if "tipo_licencia" not in st.session_state:
-    st.session_state.tipo_licencia = "ninguna"  # 'ninguna', 'individual' o 'ilimitada'
+    st.session_state.tipo_licencia = "ninguna"
 if "cliente_email" not in st.session_state:
     st.session_state.cliente_email = ""
 
 def comprobar_licencia_en_stripe(email_a_verificar):
     email_limpio = email_a_verificar.strip().lower()
     
-    # Acceso maestro de Alberto
     if email_limpio in [e.lower() for e in ADMIN_EMAILS]:
         return True, "ilimitada", "Licencia Propietario / Master"
         
@@ -181,12 +179,10 @@ def comprobar_licencia_en_stripe(email_a_verificar):
 
         customer_id = clientes.data[0].id
 
-        # 1. Comprobar si tiene la suscripción de 149 €/mes
         subs = stripe.Subscription.list(customer=customer_id, status="active")
         if subs.data:
             return True, "ilimitada", "Suscripción Oficina Técnica Activa (149€/mes)"
 
-        # 2. Comprobar si ha pagado un expediente puntual de 49 €
         cargos = stripe.Charge.list(customer=customer_id, limit=5)
         for cargo in cargos.data:
             if cargo.paid and not cargo.refunded:
@@ -196,14 +192,12 @@ def comprobar_licencia_en_stripe(email_a_verificar):
     except Exception as err:
         return False, "ninguna", f"Error de verificación: {err}"
 
-# Detección retorno Stripe tras pagar
 if st.query_params.get("pago_exitoso") == "true":
     st.session_state.tipo_licencia = "individual"
     st.session_state.cliente_email = st.query_params.get("email", "Licencia Empresa Verificada")
     st.balloons()
     st.toast("🎉 ¡Pago verificado con éxito! Expediente oficial desbloqueado.", icon="💎")
 
-# Riesgos iniciales
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
@@ -458,7 +452,6 @@ else:
 
 st.sidebar.divider()
 st.sidebar.header("💾 Guardar / Cargar Proyecto")
-# Solo accesible para el plan ilimitado de 149€/mes
 if st.session_state.tipo_licencia in ["ilimitada"]:
     st.sidebar.caption("Acceso exclusivo Oficina Técnica (Ilimitado):")
     proyecto_json = json.dumps(st.session_state.peligros_evaluados, indent=2)
@@ -686,5 +679,6 @@ with tab_expediente:
         
     st.divider()
     st.markdown("#### Previsualización del Expediente Oficial:")
-    st.html(html_dossier)
+    # Renderizado seguro en iframe aislado (evita el pantallazo blanco)
+    st.components.v1.html(html_dossier, height=650, scrolling=True)
     st.markdown('</div>', unsafe_allow_html=True)
