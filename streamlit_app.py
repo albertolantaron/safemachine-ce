@@ -41,6 +41,9 @@ T_HEADER_BADGE = "SOFTWARE PROFESIONAL DE INGENIERÍA LEGAL" if es_espanol else 
 # --- ESTILOS VISUALES INDUSTRIAL TECH ---
 st.markdown(
     """
+    <!-- Etiqueta de verificación de Google Search Console -->
+    <meta name="google-site-verification" content="1J5hlrqoLk1_n8lx_5QZg-1yE4SxUzTXQknOJsH7R7g" />
+    
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
