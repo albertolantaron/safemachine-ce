@@ -2,14 +2,32 @@ import streamlit as st
 import datetime
 import json
 import base64
+import os
+
+# Carga segura de Stripe
+try:
+    import stripe
+except ImportError:
+    stripe = None
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="SafeMachine CE | Plataforma Oficial de Marcado CE (Reglamento UE 2023/1230)",
+    page_title="SafeMachine CE | Software de Ingeniería y Marcado CE Oficial",
     page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- CLAVE SECRETA DE STRIPE DESDE SECRETS ---
+stripe_key = st.secrets.get("STRIPE_SECRET_KEY", os.environ.get("STRIPE_SECRET_KEY", None))
+if stripe_key and stripe:
+    stripe.api_key = stripe_key
+
+ADMIN_EMAILS = ["alberto.lantaron@gmail.com", "albertterre.lantaron@gmail.com"]
+
+# --- ENLACES REALES DE PAGO DE STRIPE ---
+URL_STRIPE_49 = "https://buy.stripe.com/fZu8wR69oh1k09t5ki0Ny02"
+URL_STRIPE_149 = "https://buy.stripe.com/dRm14p55k3auf4nbIG0Ny03"
 
 # --- ESTILOS VISUALES INDUSTRIAL TECH ---
 st.markdown(
@@ -71,6 +89,26 @@ st.markdown(
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
+
+    /* Placa CE Metálica */
+    .placa-metalica {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
+        border: 3px solid #475569;
+        border-radius: 8px;
+        padding: 20px;
+        color: #0f172a;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15), inset 0 0 10px rgba(255,255,255,0.6);
+        max-width: 380px;
+        margin: 15px auto;
+        position: relative;
+    }
+    .placa-remache {
+        width: 12px;
+        height: 12px;
+        background: radial-gradient(circle, #64748b 30%, #334155 100%);
+        border-radius: 50%;
+        position: absolute;
+    }
     
     div.stButton > button[kind="primary"] {
         background: #0284c7 !important;
@@ -120,24 +158,52 @@ def calcular_plr(severidad, frecuencia, posibilidad):
         else:
             return "PL d" if posibilidad == "P1 (Posible evitarlo)" else "PL e (Máxima Seguridad)"
 
-# --- TUS ENLACES REALES DE STRIPE ---
-URL_STRIPE_49 = "https://buy.stripe.com/fZu8wR69oh1k09t5ki0Ny02"
-URL_STRIPE_149 = "https://buy.stripe.com/dRm14p55k3auf4nbIG0Ny03"
-
-# --- GESTIÓN DE SESIÓN Y LICENCIAS ---
-if "usuario_es_premium" not in st.session_state:
-    st.session_state.usuario_es_premium = False
+# --- GESTIÓN DE SESIÓN Y LICENCIAS (DIFERENCIACIÓN 49€ vs 149€) ---
+if "tipo_licencia" not in st.session_state:
+    st.session_state.tipo_licencia = "ninguna"  # 'ninguna', 'individual' o 'ilimitada'
 if "cliente_email" not in st.session_state:
     st.session_state.cliente_email = ""
 
-# Detección automática tras el pago en Stripe
+def comprobar_licencia_en_stripe(email_a_verificar):
+    email_limpio = email_a_verificar.strip().lower()
+    
+    # Acceso maestro de Alberto
+    if email_limpio in [e.lower() for e in ADMIN_EMAILS]:
+        return True, "ilimitada", "Licencia Propietario / Master"
+        
+    if not stripe or not stripe_key:
+        return False, "ninguna", "Sistema de verificación no conectado a Stripe."
+
+    try:
+        clientes = stripe.Customer.list(email=email_limpio)
+        if not clientes.data:
+            return False, "ninguna", "Correo no encontrado en la base de datos de Stripe."
+
+        customer_id = clientes.data[0].id
+
+        # 1. Comprobar si tiene la suscripción de 149 €/mes
+        subs = stripe.Subscription.list(customer=customer_id, status="active")
+        if subs.data:
+            return True, "ilimitada", "Suscripción Oficina Técnica Activa (149€/mes)"
+
+        # 2. Comprobar si ha pagado un expediente puntual de 49 €
+        cargos = stripe.Charge.list(customer=customer_id, limit=5)
+        for cargo in cargos.data:
+            if cargo.paid and not cargo.refunded:
+                return True, "individual", "Licencia Expediente Individual Activa (49€)"
+
+        return False, "ninguna", "No constan pagos vigentes asociados a este correo."
+    except Exception as err:
+        return False, "ninguna", f"Error de verificación: {err}"
+
+# Detección retorno Stripe tras pagar
 if st.query_params.get("pago_exitoso") == "true":
-    st.session_state.usuario_es_premium = True
+    st.session_state.tipo_licencia = "individual"
     st.session_state.cliente_email = st.query_params.get("email", "Licencia Empresa Verificada")
     st.balloons()
-    st.toast("🎉 ¡Pago verificado con éxito! Expediente completo desbloqueado.", icon="💎")
+    st.toast("🎉 ¡Pago verificado con éxito! Expediente oficial desbloqueado.", icon="💎")
 
-# Riesgos iniciales de muestra
+# Riesgos iniciales
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
@@ -169,8 +235,9 @@ if "peligros_evaluados" not in st.session_state:
     ]
 
 # --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL ---
-def generar_html_expediente(datos, lista_riesgos):
+def generar_html_expediente(datos, lista_riesgos, tipo_licencia):
     fecha_hoy = datetime.date.today().strftime("%d de %B de %Y")
+    es_valido = tipo_licencia in ["individual", "ilimitada"]
     
     filas_tabla = ""
     for r in lista_riesgos:
@@ -185,6 +252,12 @@ def generar_html_expediente(datos, lista_riesgos):
         </tr>
         """
         
+    marca_agua = "" if es_valido else """
+    <div style="position:fixed; top:35%; left:5%; right:5%; text-align:center; transform:rotate(-30deg); font-size:42pt; color:rgba(220,38,38,0.18); font-weight:900; z-index:999; pointer-events:none; border:6px dashed rgba(220,38,38,0.25); padding:20px;">
+        BORRADOR DE EVALUACIÓN<br>DOCUMENTO NO VISABLE
+    </div>
+    """
+
     html = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -205,6 +278,7 @@ def generar_html_expediente(datos, lista_riesgos):
                 padding: 25px;
                 color: #1e293b;
                 line-height: 1.45;
+                position: relative;
             }}
             .ce-mark {{
                 font-size: 50pt;
@@ -228,9 +302,11 @@ def generar_html_expediente(datos, lista_riesgos):
         </style>
     </head>
     <body>
+        {marca_agua}
+        
         <div class="no-print" style="text-align:center; margin-bottom:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
             <button class="btn-print" onclick="window.print()">🖨️ Guardar Expediente como PDF Oficial</button>
-            <p style="font-size:12px; color:#64748b; margin-top:6px;">En la ventana de impresión, selecciona 'Guardar como PDF' para generar el expediente legal.</p>
+            <p style="font-size:12px; color:#64748b; margin-top:6px;">En la ventana de impresión, selecciona 'Guardar como PDF' para generar el documento legal.</p>
         </div>
 
         <div style="border: 1px solid #000; padding: 25px; text-align: center; margin-bottom: 30px;">
@@ -310,7 +386,7 @@ def generar_html_expediente(datos, lista_riesgos):
     """
     return html
 
-# --- CABECERA SUPERIOR ---
+# --- CABECERA PRINCIPAL ---
 st.markdown(
     """
     <div class="header-box">
@@ -324,82 +400,99 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- SIDEBAR: GESTIÓN DE LICENCIAS Y STRIPE REAL ---
+# --- SIDEBAR: ESTADO Y CONTROL DE LICENCIAS ---
 st.sidebar.header("💳 Licencia Profesional")
 
-if st.session_state.usuario_es_premium:
+if st.session_state.tipo_licencia == "ilimitada":
     st.sidebar.markdown(
         f"""
         <div style="background:#f0fdf4; border:1px solid #86efac; padding:12px; border-radius:8px; color:#166534; font-weight:bold;">
-            🟢 PLAN OFICINA TÉCNICA ACTIVO<br>
-            <span style="font-size:11px; font-weight:normal;">Licencia: {st.session_state.cliente_email}</span>
+            🟢 PLAN OFICINA TÉCNICA (149€/mes)<br>
+            <span style="font-size:11px; font-weight:normal;">Acceso Ilimitado: {st.session_state.cliente_email}</span>
         </div>
         """,
         unsafe_allow_html=True
     )
-    if st.sidebar.button("Cerrar Sesión"):
-        st.session_state.usuario_es_premium = False
-        st.session_state.cliente_email = ""
-        st.rerun()
+elif st.session_state.tipo_licencia == "individual":
+    st.sidebar.markdown(
+        f"""
+        <div style="background:#eff6ff; border:1px solid #93c5fd; padding:12px; border-radius:8px; color:#1e40af; font-weight:bold;">
+            🔵 PLAN EXPEDIENTE INDIVIDUAL (49€)<br>
+            <span style="font-size:11px; font-weight:normal;">1 Máquina Desbloqueada</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 else:
     st.sidebar.markdown(
         """
         <div style="background:#fffbeb; border:1px solid #fde68a; padding:10px; border-radius:8px; font-size:12px; color:#92400e;">
             ⚠️ <strong>MODO EVALUACIÓN</strong><br>
-            Cálculos y previsualización libres. La descarga de expedientes visables requiere licencia.
+            Previsualización con marca de agua. Desbloquea tu expediente visable oficial:
         </div>
         """,
         unsafe_allow_html=True
     )
-    st.sidebar.write("**Tarifas Profesionales:**")
-    st.sidebar.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:10px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:8px;">📄 Expediente Único (49 €)</a>', unsafe_allow_html=True)
-    st.sidebar.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:10px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 Licencia Mensual Ilimitada (149 €/mes)</a>', unsafe_allow_html=True)
-    
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:6px;">📄 Expediente Individual (49 €)</a>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 Oficina Técnica Ilimitada (149 €/mes)</a>', unsafe_allow_html=True)
+
+if st.session_state.tipo_licencia != "ninguna":
+    if st.sidebar.button("Cerrar Sesión"):
+        st.session_state.tipo_licencia = "ninguna"
+        st.session_state.cliente_email = ""
+        st.rerun()
+else:
     with st.sidebar.form("form_recuperar"):
-        correo_licencia = st.text_input("Acceder con tu correo de compra:")
-        if st.form_submit_button("🔑 Validar Acceso"):
+        st.write("**¿Ya compraste una licencia?**")
+        correo_licencia = st.text_input("Tu correo de compra en Stripe:")
+        if st.form_submit_button("🔑 Validar con Stripe"):
             if "@" in correo_licencia:
-                st.session_state.usuario_es_premium = True
-                st.session_state.cliente_email = correo_licencia
-                st.rerun()
+                valido, tipo, mensaje = comprobar_licencia_en_stripe(correo_licencia)
+                if valido:
+                    st.session_state.tipo_licencia = tipo
+                    st.session_state.cliente_email = correo_licencia.strip().lower()
+                    st.success("¡Licencia validada!")
+                    st.rerun()
+                else:
+                    st.error(mensaje)
 
 st.sidebar.divider()
 st.sidebar.header("💾 Guardar / Cargar Proyecto")
-st.sidebar.caption("Exporta la máquina actual a un archivo JSON para continuarla en cualquier momento:")
-
-# Descargar archivo de proyecto
-proyecto_json = json.dumps(st.session_state.peligros_evaluados, indent=2)
-st.sidebar.download_button(
-    label="💾 Guardar Máquina a Archivo (.json)",
-    data=proyecto_json,
-    file_name="Proyecto_Maquina_CE.json",
-    mime="application/json"
-)
-
-# Cargar archivo de proyecto
-archivo_cargado = st.sidebar.file_uploader("📂 Cargar Máquina (.json):", type=["json"])
-if archivo_cargado:
-    try:
-        datos_cargados = json.load(archivo_cargado)
-        if isinstance(datos_cargados, list):
-            st.session_state.peligros_evaluados = datos_cargados
-            st.sidebar.success("¡Proyecto cargado con éxito!")
-    except Exception:
-        st.sidebar.error("Archivo no válido.")
+# Solo accesible para el plan ilimitado de 149€/mes
+if st.session_state.tipo_licencia in ["ilimitada"]:
+    st.sidebar.caption("Acceso exclusivo Oficina Técnica (Ilimitado):")
+    proyecto_json = json.dumps(st.session_state.peligros_evaluados, indent=2)
+    st.sidebar.download_button(
+        label="💾 Guardar Máquina (.json)",
+        data=proyecto_json,
+        file_name="Proyecto_Maquina_CE.json",
+        mime="application/json"
+    )
+    archivo_cargado = st.sidebar.file_uploader("📂 Cargar Máquina (.json):", type=["json"])
+    if archivo_cargado:
+        try:
+            datos_cargados = json.load(archivo_cargado)
+            if isinstance(datos_cargados, list):
+                st.session_state.peligros_evaluados = datos_cargados
+                st.sidebar.success("¡Proyecto cargado con éxito!")
+        except Exception:
+            st.sidebar.error("Archivo no válido.")
+else:
+    st.sidebar.info("🔒 Guardado/Carga en JSON disponible en el **Plan Oficina Técnica (149€/mes)**.")
 
 # --- TABS DE TRABAJO ---
-tab_maquina, tab_hrn, tab_plr, tab_ress, tab_expediente = st.tabs([
-    "🏭 1. Datos de Máquina y Fabricante",
-    "⚠️ 2. Evaluación de Riesgos (ISO 12100)",
+tab_maquina, tab_hrn, tab_plr, tab_placa, tab_expediente = st.tabs([
+    "🏭 1. Ficha Técnica y Fabricante",
+    "⚠️ 2. Matriz Cuantitativa HRN (ISO 12100)",
     "🛡️ 3. Nivel de Rendimiento PLr (ISO 13849-1)",
-    "📋 4. Auditoría RESS (Anexo III)",
-    "📄 5. Expediente Oficial & Descarga"
+    "🏷️ 4. Placa CE Metálica (Simulador)",
+    "📄 5. Expediente Oficial y Descarga"
 ])
 
 # --- PESTAÑA 1: DATOS GENERALES ---
 with tab_maquina:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Ficha de Identificación de la Máquina")
+    st.subheader("Identificación de la Máquina e Instalación")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -415,7 +508,7 @@ with tab_maquina:
         colegiado = st.text_input("Nº de Colegiado Oficial / DNI Técnico:", value="COIIB-48192")
 
     st.divider()
-    st.subheader("Parámetros de Alimentación y Energía (IEC 60204-1)")
+    st.subheader("Especificaciones Energéticas (UNE-EN 60204-1)")
     col_e1, col_e2, col_e3, col_e4 = st.columns(4)
     with col_e1:
         potencia = st.number_input("Potencia instalada (kW):", value=12.5, step=0.5)
@@ -431,7 +524,7 @@ with tab_maquina:
 # --- PESTAÑA 2: MÉTODO CUANTITATIVO HRN ---
 with tab_hrn:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Calculadora Cuantitativa de Riesgo HRN (Hazard Rating Number)")
+    st.subheader("Evaluación Cuantitativa de Riesgo HRN (Hazard Rating Number)")
     st.write("Fórmula normalizada UNE-EN ISO 12100: $\\text{HRN} = LO \\times FE \\times DPH \\times NP$. Permite calcular el riesgo inicial y certificar que la medida reduce el riesgo a un nivel 'Aceptable'.")
     
     with st.form("form_nuevo_riesgo"):
@@ -518,28 +611,34 @@ with tab_plr:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PESTAÑA 4: CHECKLIST RESS (REGLAMENTO UE 2023/1230) ---
-with tab_ress:
+# --- PESTAÑA 4: PLACA CE METÁLICA (SIMULADOR) ---
+with tab_placa:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Checklist de Requisitos Esenciales de Salud y Seguridad (Anexo III)")
-    st.write("Verificación técnica de conformidad conforme a la nueva legislación europea de máquinas:")
+    st.subheader("Simulador de Placa de Características Físicas (Art. 16 y Anexo III)")
+    st.write("Vista previa de la placa indeleble que debe remacharse al chasis de la máquina:")
     
-    c_chk1, c_chk2 = st.columns(2)
-    with c_chk1:
-        st.checkbox("✔️ 1.1.2 Principios de integración de la seguridad (diseño intrínseco)", value=True)
-        st.checkbox("✔️ 1.1.3 Materiales y productos libres de toxicidad o peligro químico", value=True)
-        st.checkbox("✔️ 1.1.5 Diseño ergonómico para reducir fatiga del operador", value=True)
-        st.checkbox("✔️ 1.2.1 Seguridad y fiabilidad de los sistemas de mando (ISO 13849)", value=True)
-        st.checkbox("✔️ 1.2.2 Dispositivos de parada de emergencia con enclavamiento (ISO 13850)", value=True)
-    with c_chk2:
-        st.checkbox("✔️ 1.3.2 Resistencia mecánica frente a rotura o proyección", value=True)
-        st.checkbox("✔️ 1.3.7 Prevención del riesgo de atrapamiento en partes móviles", value=True)
-        st.checkbox("✔️ 1.5.1 Energía eléctrica (Conformidad estricta con IEC 60204-1)", value=True)
-        st.checkbox("✔️ 1.6.3 Separación de fuentes de energía (Procedimiento LOTO)", value=True)
-        st.checkbox("✔️ 1.7.3 Placa de características técnicas visible e indeleble", value=True)
+    st.markdown(
+        f"""
+        <div class="placa-metalica">
+            <div class="placa-remache" style="top:8px; left:8px;"></div>
+            <div class="placa-remache" style="top:8px; right:8px;"></div>
+            <div class="placa-remache" style="bottom:8px; left:8px;"></div>
+            <div class="placa-remache" style="bottom:8px; right:8px;"></div>
+            <div style="font-size:32pt; font-weight:900; letter-spacing:-3px; text-align:center; margin-bottom:5px;">CE</div>
+            <p style="margin:0; font-weight:bold; font-size:12pt; text-align:center;">{fabricante}</p>
+            <p style="margin:0; font-size:8.5pt; text-align:center; color:#334155;">{direccion}</p>
+            <hr style="border:1px solid #475569; margin:10px 0;">
+            <p style="margin:2px 0; font-size:9pt;"><strong>MÁQUINA:</strong> {denominacion}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>MODELO:</strong> {modelo}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>Nº SERIE:</strong> {serie} &nbsp;|&nbsp; <strong>AÑO:</strong> {anio}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>POTENCIA:</strong> {potencia} kW &nbsp;|&nbsp; <strong>TENSIÓN:</strong> {tension} V ({fases.split()[0]})</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PESTAÑA 5: GENERACIÓN Y DESCARGA DEL EXPEDIENTE ---
+# --- PESTAÑA 5: EXPEDIENTE OFICIAL Y DESCARGA ---
 with tab_expediente:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader("Expediente Técnico Completo y Marcado CE Oficial")
@@ -561,24 +660,24 @@ with tab_expediente:
         "presion": presion
     }
 
-    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados)
+    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados, st.session_state.tipo_licencia)
     
     col_d1, col_d2 = st.columns([1, 1])
     with col_d1:
         st.markdown("#### 1. Descarga del Documento Legal")
-        if st.session_state.usuario_es_premium:
+        if st.session_state.tipo_licencia in ["individual", "ilimitada"]:
             st.download_button(
-                label="📥 Descargar Expediente Marcado CE (HTML / PDF)",
+                label="📥 Descargar Expediente Marcado CE Oficial (Listo para Visar)",
                 data=html_dossier,
                 file_name=f"Expediente_CE_{modelo}.html",
                 mime="text/html",
                 type="primary"
             )
-            st.caption("Abre el archivo descargado en tu navegador y pulsa 'Guardar como PDF' para obtener el documento oficial maquetado.")
+            st.caption("Abre el archivo descargado en tu navegador y pulsa 'Guardar como PDF' para obtener el documento oficial limpio sin marcas de agua.")
         else:
-            st.warning("🔒 La descarga del expediente visable requiere una licencia activa.")
-            st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">Desbloquear Expediente Oficial (49 €)</a>', unsafe_allow_html=True)
-            st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Contratar Plan Mensual Ilimitado (149 €/mes)</a>', unsafe_allow_html=True)
+            st.warning("🔒 El documento oficial sin marcas de agua y visable requiere una licencia.")
+            st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">Desbloquear Este Expediente (49 €)</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Contratar Plan Oficina Técnica (149 €/mes)</a>', unsafe_allow_html=True)
             
     with col_d2:
         st.markdown("#### 2. Estado de Certificación Técnica")
