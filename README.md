@@ -9,7 +9,7 @@ An enterprise-grade **Legal Engineering & Machinery Safety platform** designed t
 
 ---
 
-### 🚀 [Try the Live Web Application Here](https://safemachine-ce.streamlit.app)
+### 🚀 [Try the Live Web Application Here](https://safemachine.streamlit.app)
 
 ---
 
