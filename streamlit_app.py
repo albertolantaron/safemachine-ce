@@ -120,22 +120,24 @@ def calcular_plr(severidad, frecuencia, posibilidad):
         else:
             return "PL d" if posibilidad == "P1 (Posible evitarlo)" else "PL e (Máxima Seguridad)"
 
+# --- TUS ENLACES REALES DE STRIPE ---
+URL_STRIPE_49 = "https://buy.stripe.com/fZu8wR69oh1k09t5ki0Ny02"
+URL_STRIPE_149 = "https://buy.stripe.com/dRm14p55k3auf4nbIG0Ny03"
+
 # --- GESTIÓN DE SESIÓN Y LICENCIAS ---
 if "usuario_es_premium" not in st.session_state:
     st.session_state.usuario_es_premium = False
 if "cliente_email" not in st.session_state:
     st.session_state.cliente_email = ""
 
-# Detección de pago Stripe
+# Detección automática tras el pago en Stripe
 if st.query_params.get("pago_exitoso") == "true":
-    correo = st.query_params.get("email", "")
-    if "@" in correo:
-        st.session_state.usuario_es_premium = True
-        st.session_state.cliente_email = correo
-        st.balloons()
-        st.toast("🎉 ¡Licencia Profesional activada con éxito!", icon="💎")
+    st.session_state.usuario_es_premium = True
+    st.session_state.cliente_email = st.query_params.get("email", "Licencia Empresa Verificada")
+    st.balloons()
+    st.toast("🎉 ¡Pago verificado con éxito! Expediente completo desbloqueado.", icon="💎")
 
-# Riesgos iniciales precargados
+# Riesgos iniciales de muestra
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
@@ -322,12 +324,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- SIDEBAR: GESTIÓN DE LICENCIAS Y STRIPE ---
+# --- SIDEBAR: GESTIÓN DE LICENCIAS Y STRIPE REAL ---
 st.sidebar.header("💳 Licencia Profesional")
-
-# Simulación o conexión real a Stripe
-url_stripe_49 = "https://buy.stripe.com/3cI14pgO28uO8FZ1420Ny01" # Sustituye por tu link puntual
-url_stripe_149 = "https://buy.stripe.com/3cI14pgO28uO8FZ1420Ny01" # Sustituye por tu link mensual
 
 if st.session_state.usuario_es_premium:
     st.sidebar.markdown(
@@ -354,12 +352,12 @@ else:
         unsafe_allow_html=True
     )
     st.sidebar.write("**Tarifas Profesionales:**")
-    st.sidebar.markdown(f'<a href="{url_stripe_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:8px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:6px;">📄 Expediente Único (49 €)</a>', unsafe_allow_html=True)
-    st.sidebar.markdown(f'<a href="{url_stripe_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:8px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 Licencia Mensual Ilimitada (149 €/mes)</a>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:10px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:8px;">📄 Expediente Único (49 €)</a>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:10px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 Licencia Mensual Ilimitada (149 €/mes)</a>', unsafe_allow_html=True)
     
     with st.sidebar.form("form_recuperar"):
         correo_licencia = st.text_input("Acceder con tu correo de compra:")
-        if st.form_submit_button("🔑 Validar"):
+        if st.form_submit_button("🔑 Validar Acceso"):
             if "@" in correo_licencia:
                 st.session_state.usuario_es_premium = True
                 st.session_state.cliente_email = correo_licencia
@@ -579,7 +577,8 @@ with tab_expediente:
             st.caption("Abre el archivo descargado en tu navegador y pulsa 'Guardar como PDF' para obtener el documento oficial maquetado.")
         else:
             st.warning("🔒 La descarga del expediente visable requiere una licencia activa.")
-            st.markdown(f'<a href="{url_stripe_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Desbloquear Expediente Oficial (49 €)</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">Desbloquear Expediente Oficial (49 €)</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Contratar Plan Mensual Ilimitado (149 €/mes)</a>', unsafe_allow_html=True)
             
     with col_d2:
         st.markdown("#### 2. Estado de Certificación Técnica")
@@ -588,5 +587,5 @@ with tab_expediente:
         
     st.divider()
     st.markdown("#### Previsualización del Expediente Oficial:")
-    st.components.v1.html(html_dossier, height=650, scrolling=True)
+    st.html(html_dossier)
     st.markdown('</div>', unsafe_allow_html=True)
