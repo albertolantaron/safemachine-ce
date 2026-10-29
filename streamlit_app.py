@@ -29,14 +29,14 @@ ADMIN_EMAILS = ["alberto.lantaron@gmail.com", "albertterre.lantaron@gmail.com"]
 URL_STRIPE_49 = "https://buy.stripe.com/fZu8wR69oh1k09t5ki0Ny02"
 URL_STRIPE_149 = "https://buy.stripe.com/dRm14p55k3auf4nbIG0Ny03"
 
-# --- IDIOMA ---
+# --- SELECTOR DE IDIOMA GLOBAL ---
 idioma = st.sidebar.radio("🌐 Language / Idioma:", ["🇪🇸 Español", "🇬🇧 English"], horizontal=True)
-es_espanol = "Español" in idioma
+es_en = "English" in idioma
 
-# Textos según idioma
+# Textos de cabecera
 T_TITULO = "SAFEMACHINE CE"
-T_SUB = "Plataforma de Expedientes Técnicos, Marcado CE y Evaluación de Riesgos (ISO 12100 & Reglamento UE 2023/1230)" if es_espanol else "Automated CE Marking Technical Files & Quantitative Risk Assessment Platform (ISO 12100 & EU 2023/1230)"
-T_HEADER_BADGE = "SOFTWARE PROFESIONAL DE INGENIERÍA LEGAL" if es_espanol else "LEGAL ENGINEERING COMPLIANCE SOFTWARE"
+T_SUB = "Automated CE Marking Technical Files & Quantitative Risk Assessment Platform (ISO 12100 & EU 2023/1230)" if es_en else "Plataforma de Expedientes Técnicos, Marcado CE y Evaluación de Riesgos (ISO 12100 & Reglamento UE 2023/1230)"
+T_HEADER_BADGE = "LEGAL ENGINEERING COMPLIANCE SOFTWARE" if es_en else "SOFTWARE PROFESIONAL DE INGENIERÍA LEGAL"
 
 # --- ESTILOS VISUALES INDUSTRIAL TECH ---
 st.markdown(
@@ -136,23 +136,29 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- MATRICES DE CÁLCULO NORMATIVO ---
-VALORES_LO = {"Casi imposible (0.033)": 0.033, "Muy improbable (1)": 1, "Poco probable (2)": 2, "Posible (5)": 5, "Probable (8)": 8, "Cierto (15)": 15}
-VALORES_FE = {"Anual (0.5)": 0.5, "Mensual (1)": 1, "Semanal (1.5)": 1.5, "Diaria (2.5)": 2.5, "Por turnos / Horaria (4)": 4, "Continua (5)": 5}
-VALORES_DPH = {"Arañazo / Golpe leve (0.1)": 0.1, "Laceración / Fractura menor (0.5)": 0.5, "Amputación de dedo / Fractura grave (3)": 3, "Amputación de mano / Pérdida de ojo (7)": 7, "Muerte o incapacidad permanente (15)": 15}
-VALORES_NP = {"1 o 2 personas (1)": 1, "3 a 7 personas (2)": 2, "8 a 15 personas (4)": 4, "Más de 15 personas (8)": 8}
+# --- MATRICES DE CÁLCULO NORMATIVO HRN ---
+if es_en:
+    VALORES_LO = {"Almost impossible (0.033)": 0.033, "Highly unlikely (1)": 1, "Unlikely (2)": 2, "Possible (5)": 5, "Probable (8)": 8, "Certain (15)": 15}
+    VALORES_FE = {"Annual (0.5)": 0.5, "Monthly (1)": 1, "Weekly (1.5)": 1.5, "Daily (2.5)": 2.5, "Per shift / Hourly (4)": 4, "Continuous (5)": 5}
+    VALORES_DPH = {"Scratch / Minor bruise (0.1)": 0.1, "Laceration / Minor fracture (0.5)": 0.5, "Finger amputation / Severe fracture (3)": 3, "Hand amputation / Loss of eye (7)": 7, "Fatality or permanent disability (15)": 15}
+    VALORES_NP = {"1 to 2 persons (1)": 1, "3 to 7 persons (2)": 2, "8 to 15 persons (4)": 4, "More than 15 persons (8)": 8}
+else:
+    VALORES_LO = {"Casi imposible (0.033)": 0.033, "Muy improbable (1)": 1, "Poco probable (2)": 2, "Posible (5)": 5, "Probable (8)": 8, "Cierto (15)": 15}
+    VALORES_FE = {"Anual (0.5)": 0.5, "Mensual (1)": 1, "Semanal (1.5)": 1.5, "Diaria (2.5)": 2.5, "Por turnos / Horaria (4)": 4, "Continua (5)": 5}
+    VALORES_DPH = {"Arañazo / Golpe leve (0.1)": 0.1, "Laceración / Fractura menor (0.5)": 0.5, "Amputación de dedo / Fractura grave (3)": 3, "Amputación de mano / Pérdida de ojo (7)": 7, "Muerte o incapacidad permanente (15)": 15}
+    VALORES_NP = {"1 o 2 personas (1)": 1, "3 a 7 personas (2)": 2, "8 a 15 personas (4)": 4, "Más de 15 personas (8)": 8}
 
-def clasificar_hrn(hrn):
+def clasificar_hrn(hrn, en_ingles=False):
     if hrn <= 5:
-        return ("Riesgo Aceptable / Insignificante" if es_espanol else "Acceptable / Negligible Risk"), "#10b981"
+        return ("Acceptable / Negligible Risk" if en_ingles else "Riesgo Aceptable / Insignificante"), "#10b981"
     elif hrn <= 50:
-        return ("Riesgo Bajo (Medidas leves)" if es_espanol else "Low Risk (Minor controls)"), "#0284c7"
+        return ("Low Risk (Minor controls)" if en_ingles else "Riesgo Bajo (Medidas leves)"), "#0284c7"
     elif hrn <= 150:
-        return ("Riesgo Medio (Medidas obligatorias)" if es_espanol else "Medium Risk (Mandatory controls)"), "#f59e0b"
+        return ("Medium Risk (Mandatory controls)" if en_ingles else "Riesgo Medio (Medidas obligatorias)"), "#f59e0b"
     elif hrn <= 500:
-        return ("Riesgo Alto (Peligro crítico)" if es_espanol else "High Risk (Critical danger)"), "#ea580c"
+        return ("High Risk (Critical danger)" if en_ingles else "Riesgo Alto (Peligro crítico)"), "#ea580c"
     else:
-        return ("Riesgo Inaceptable (Parada de máquina)" if es_espanol else "Unacceptable Risk (Immediate stop)"), "#dc2626"
+        return ("Unacceptable Risk (Immediate stop)" if en_ingles else "Riesgo Inaceptable (Parada de máquina)"), "#dc2626"
 
 def calcular_plr(severidad, frecuencia, posibilidad):
     if "S1" in severidad:
@@ -180,14 +186,14 @@ if "serie_vinculada" not in st.session_state:
 def comprobar_licencia_en_stripe(email_a_verificar):
     email_limpio = email_a_verificar.strip().lower()
     if email_limpio in [e.lower() for e in ADMIN_EMAILS]:
-        return True, "ilimitada", "Licencia Propietario / Master", "", ""
+        return True, "ilimitada", ("Master / Owner License Active" if es_en else "Licencia Propietario / Master"), "", ""
     if not stripe or not stripe_key:
-        return False, "ninguna", "Sistema de verificación no conectado a Stripe.", "", ""
+        return False, "ninguna", ("Stripe verification system disconnected." if es_en else "Sistema de verificación no conectado a Stripe."), "", ""
 
     try:
         clientes = stripe.Customer.list(email=email_limpio)
         if not clientes.data:
-            return False, "ninguna", "Correo no encontrado en la base de datos de Stripe.", "", ""
+            return False, "ninguna", ("Email not found in Stripe database." if es_en else "Correo no encontrado en la base de datos de Stripe."), "", ""
 
         cust = clientes.data[0]
         customer_id = cust.id
@@ -195,19 +201,18 @@ def comprobar_licencia_en_stripe(email_a_verificar):
         # 1. Comprobar si tiene suscripción activa (Oficina Técnica)
         subs = stripe.Subscription.list(customer=customer_id, status="active")
         if subs.data:
-            return True, "ilimitada", "Suscripción Oficina Técnica Activa (149€/mes)", customer_id, ""
+            return True, "ilimitada", ("Active Engineering Office Subscription (149€/mo)" if es_en else "Suscripción Oficina Técnica Activa (149€/mes)"), customer_id, ""
 
         # 2. Comprobar si pagó un expediente individual (49€)
         cargos = stripe.Charge.list(customer=customer_id, limit=5)
         for cargo in cargos.data:
             if cargo.paid and not cargo.refunded:
-                # Comprobamos si este cliente ya vinculó su expediente a un número de serie
                 serie_existente = cust.metadata.get("serie_vinculada", "")
-                return True, "individual", "Licencia Expediente Individual (49€)", customer_id, serie_existente
+                return True, "individual", ("Single Machine Dossier License (49€)" if es_en else "Licencia Expediente Individual (49€)"), customer_id, serie_existente
 
-        return False, "ninguna", "No constan pagos vigentes asociados a este correo.", "", ""
+        return False, "ninguna", ("No active payments associated with this email." if es_en else "No constan pagos vigentes asociados a este correo."), "", ""
     except Exception as err:
-        return False, "ninguna", f"Error de verificación: {err}", "", ""
+        return False, "ninguna", f"Verification Error: {err}", "", ""
 
 # --- RETORNO SEGURO TRAS EL PAGO DE STRIPE ---
 session_id = st.query_params.get("session_id")
@@ -218,7 +223,6 @@ if session_id and stripe and stripe_key:
             email_comprador = checkout_session.customer_details.email.strip().lower()
             monto_pagado = checkout_session.amount_total or 0
 
-            # Determinamos tipo según plan pagado
             if checkout_session.mode == "subscription" or monto_pagado >= 14000:
                 st.session_state.tipo_licencia = "ilimitada"
             else:
@@ -227,71 +231,76 @@ if session_id and stripe and stripe_key:
             st.session_state.cliente_email = email_comprador
             st.session_state.customer_id = checkout_session.customer or ""
             
-            # Limpiamos URL
             st.query_params.clear()
             st.balloons()
-            st.toast(f"🎉 ¡Pago de {email_comprador} verificado con éxito!", icon="💎")
+            st.toast(f"🎉 {'Payment verified for' if es_en else '¡Pago de'} {email_comprador}!", icon="💎")
         else:
-            st.error("El pago no se ha completado correctamente.")
+            st.error("Payment incomplete." if es_en else "El pago no se ha completado correctamente.")
     except Exception as e:
-        st.error(f"Error de validación con Stripe: {e}")
+        st.error(f"Error: {e}")
 
-# Peligros iniciales precargados
+# Peligros iniciales bilingües
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
-            "zona": "Zona de Transmisión de Potencia" if es_espanol else "Power Transmission Area",
-            "peligro": "Atrapamiento en engranajes y cadenas" if es_espanol else "Entanglement in gears and chain drive",
-            "norma": "UNE-EN ISO 14120 / UNE-EN ISO 13857",
+            "zona_es": "Zona de Transmisión de Potencia",
+            "zona_en": "Power Transmission Area",
+            "peligro_es": "Atrapamiento en engranajes y cadenas",
+            "peligro_en": "Entanglement in drive gears and power chain",
+            "norma": "EN ISO 14120 / EN ISO 13857",
             "hrn_inicial": 160.0,
-            "estado_inicial": "Riesgo Alto" if es_espanol else "High Risk",
-            "color_inicial": "#ea580c",
             "plr": "PL d",
-            "medida": "Resguardo fijo envolvente atornillado que precisa herramienta para su apertura + microrruptor enclavado." if es_espanol else "Fixed interlocked guarding requiring tools for removal + safety interlock switch.",
-            "hrn_residual": 3.2,
-            "estado_residual": "Riesgo Aceptable" if es_espanol else "Acceptable Risk",
-            "color_residual": "#10b981"
+            "medida_es": "Resguardo fijo envolvente atornillado que precisa herramienta para su apertura + microrruptor enclavado.",
+            "medida_en": "Fixed enclosing guard requiring specialized tools for removal + interlock safety switch.",
+            "hrn_residual": 3.2
         },
         {
-            "zona": "Zona Operativa de Prensado / Corte" if es_espanol else "Pressing & Shearing Tool Area",
-            "peligro": "Aplastamiento y cizallamiento por plato móvil" if es_espanol else "Crushing and shearing by hydraulic ram",
-            "norma": "UNE-EN ISO 13855 / UNE-EN ISO 13851",
+            "zona_es": "Zona Operativa de Prensado / Corte",
+            "zona_en": "Hydraulic Press & Tooling Area",
+            "peligro_es": "Aplastamiento y cizallamiento por plato móvil",
+            "peligro_en": "Crushing and shearing by hydraulic ram movement",
+            "norma": "EN ISO 13855 / EN ISO 13851",
             "hrn_inicial": 240.0,
-            "estado_inicial": "Riesgo Alto" if es_espanol else "High Risk",
-            "color_inicial": "#ea580c",
             "plr": "PL e",
-            "medida": "Barrera inmaterial fotoeléctrica Tipo 4 (distancia de seguridad 450 mm) con parada de emergencia Categoría 4." if es_espanol else "Type 4 safety optical light curtain (450 mm safety distance) with Category 4 emergency stop.",
-            "hrn_residual": 4.8,
-            "estado_residual": "Riesgo Aceptable" if es_espanol else "Acceptable Risk",
-            "color_residual": "#10b981"
+            "medida_es": "Barrera inmaterial fotoeléctrica Tipo 4 (distancia de seguridad 450 mm) con parada de emergencia Categoría 4.",
+            "medida_en": "Type 4 active optoelectronic protective device (450 mm safety distance) with Category 4 emergency stop.",
+            "hrn_residual": 4.8
         }
     ]
 
-# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL CON BLUR ANTI-COPIA ---
+# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL 100% BILINGÜE ---
 def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False, bloqueado_por_serie=False):
-    fecha_hoy = datetime.date.today().strftime("%d of %B %Y" if en_ingles else "%d de %B de %Y")
+    fecha_hoy = datetime.date.today().strftime("%B %d, %Y" if en_ingles else "%d de %B de %Y")
     es_valido = (tipo_licencia in ["individual", "ilimitada"]) and not bloqueado_por_serie
     
     filas_tabla = ""
     for idx, r in enumerate(lista_riesgos):
         blur_style = "" if (es_valido or idx == 0) else "filter: blur(5px); user-select: none; opacity: 0.6;"
+        
+        zona_texto = r.get("zona_en" if en_ingles else "zona_es", r.get("zona", ""))
+        peligro_texto = r.get("peligro_en" if en_ingles else "peligro_es", r.get("peligro", ""))
+        medida_texto = r.get("medida_en" if en_ingles else "medida_es", r.get("medida", ""))
+        
+        estado_ini, color_ini = clasificar_hrn(r["hrn_inicial"], en_ingles=en_ingles)
+        estado_res, color_res = clasificar_hrn(r["hrn_residual"], en_ingles=en_ingles)
+        
         filas_tabla += f"""
         <tr style="{blur_style}">
-            <td style="padding:8px; border:1px solid #cbd5e1;"><strong>{r['zona']}</strong><br><span style="color:#64748b;">{r['peligro']}</span></td>
+            <td style="padding:8px; border:1px solid #cbd5e1;"><strong>{zona_texto}</strong><br><span style="color:#64748b;">{peligro_texto}</span></td>
             <td style="padding:8px; border:1px solid #cbd5e1; font-size:8.5pt;">{r['norma']}</td>
-            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; color:{r['color_inicial']}; font-weight:bold;">HRN: {r['hrn_inicial']:.1f}<br><span style="font-size:7.5pt;">{r['estado_inicial']}</span></td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; color:{color_ini}; font-weight:bold;">HRN: {r['hrn_inicial']:.1f}<br><span style="font-size:7.5pt;">{estado_ini}</span></td>
             <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; color:#0284c7;">{r['plr']}</td>
-            <td style="padding:8px; border:1px solid #cbd5e1; font-size:8.5pt;">{r['medida']}</td>
-            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; color:{r['color_residual']}; font-weight:bold;">HRN: {r['hrn_residual']:.1f}<br><span style="font-size:7.5pt;">{r['estado_residual']}</span></td>
+            <td style="padding:8px; border:1px solid #cbd5e1; font-size:8.5pt;">{medida_texto}</td>
+            <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; color:{color_res}; font-weight:bold;">HRN: {r['hrn_residual']:.1f}<br><span style="font-size:7.5pt;">{estado_res}</span></td>
         </tr>
         """
         
     bloque_bloqueo = "" if es_valido else f"""
     <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 20px; text-align: center; border-radius: 8px; margin: 25px 0;">
         <span style="font-size: 24pt;">🔒</span>
-        <h3 style="color: #9f1239; margin: 8px 0;">{'SECCIONES LEGALES BLOQUEADAS' if not en_ingles else 'LEGAL SECTIONS LOCKED'}</h3>
+        <h3 style="color: #9f1239; margin: 8px 0;">{'LEGAL AND COMPLIANCE SECTIONS LOCKED' if en_ingles else 'SECCIONES LEGALES BLOQUEADAS (MODO EVALUACIÓN)'}</h3>
         <p style="color: #4c0519; font-size: 10pt; max-width: 600px; margin: 0 auto;">
-            {'Para descargar este Expediente Oficial, desbloquear todas las matrices y obtener la Declaración visable, adquiere tu licencia o contrata el Plan Oficina Técnica.' if not en_ingles else 'To download this official file, unblur risk assessments, and obtain the signable declaration, purchase a license.'}
+            {'To download the unblurred Technical Construction File, unlock the full quantitative risk assessment and obtain the signable EU Declaration of Conformity, please purchase a license (49 € Single Dossier or 149 €/mo Unlimited Plan).' if en_ingles else 'Para descargar el Expediente de Construcción completo, desbloquear todas las matrices sin desenfoque y obtener la Declaración Oficial visable, adquiere tu licencia (49 € o 149 €/mes).'}
         </p>
     </div>
     """
@@ -301,9 +310,9 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
     t_doc = "TECHNICAL CONSTRUCTION FILE" if en_ingles else "EXPEDIENTE TÉCNICO DE CONSTRUCCIÓN"
     t_reg = "Pursuant to European Machinery Regulation (EU) 2023/1230" if en_ingles else "Conforme al Reglamento Europeo de Máquinas (UE) 2023/1230"
     t_sec1 = "1. TECHNICAL SPECIFICATIONS (EN 60204-1)" if en_ingles else "1. ESPECIFICACIONES TÉCNICAS (UNE-EN 60204-1)"
-    t_sec2 = "2. RISK ASSESSMENT & REDUCTION (EN ISO 12100 & ISO 13849-1)" if en_ingles else "2. EVALUACIÓN Y REDUCCIÓN DE RIESGOS (UNE-EN ISO 12100 & ISO 13849-1)"
-    t_sec3 = "3. MANDATORY CE MARKING NAMEPLATE (Art. 16)" if en_ingles else "3. PLACA DE CARACTERÍSTICAS TÉCNICAS OBLIGATORIA (Art. 16)"
-    t_sec4 = "4. EU DECLARATION OF CONFORMITY" if en_ingles else "4. DECLARACIÓN UE DE CONFORMIDAD (DOCUMENTO OFICIAL)"
+    t_sec2 = "2. QUANTITATIVE RISK ASSESSMENT & RISK REDUCTION (EN ISO 12100 & ISO 13849-1)" if en_ingles else "2. EVALUACIÓN Y REDUCCIÓN DE RIESGOS (UNE-EN ISO 12100 & ISO 13849-1)"
+    t_sec3 = "3. MANDATORY CE MARKING NAMEPLATE (Art. 16 & Annex III)" if en_ingles else "3. PLACA DE CARACTERÍSTICAS TÉCNICAS OBLIGATORIA (Art. 16 y Anexo III)"
+    t_sec4 = "4. EU DECLARATION OF CONFORMITY (LEGAL DOCUMENT)" if en_ingles else "4. DECLARACIÓN UE DE CONFORMIDAD (DOCUMENTO OFICIAL)"
 
     html = f"""
     <!DOCTYPE html>
@@ -351,7 +360,7 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
     <body>
         <div class="no-print" style="text-align:center; margin-bottom:30px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
             <button class="btn-print" onclick="window.print()">🖨️ {'Print / Save as Official PDF' if en_ingles else 'Guardar Expediente como PDF Oficial'}</button>
-            <p style="font-size:12px; color:#64748b; margin-top:6px;">{'Select Destination: Save as PDF in print options.' if en_ingles else 'En la ventana de impresión selecciona: Guardar como PDF.'}</p>
+            <p style="font-size:12px; color:#64748b; margin-top:6px;">{'Select: Destination -> Save as PDF in your print dialog.' if en_ingles else 'En la ventana de impresión selecciona: Guardar como PDF.'}</p>
         </div>
 
         <div style="border: 1px solid #000; padding: 25px; text-align: center; margin-bottom: 30px;">
@@ -359,32 +368,33 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
             <h1>{t_doc}</h1>
             <p style="font-size:11pt; margin:5px 0;"><strong>{t_reg}</strong></p>
             <hr style="margin:20px 0;">
-            <p style="font-size:11pt;"><strong>{'MACHINERY' if en_ingles else 'MÁQUINA'}:</strong> {datos['denominacion']}</p>
-            <p style="font-size:10pt;"><strong>{'MODEL' if en_ingles else 'MODELO'}:</strong> {datos['modelo']} | <strong>S/N:</strong> {datos['serie']}</p>
-            <p style="font-size:10pt;"><strong>{'MANUFACTURER' if en_ingles else 'FABRICANTE'}:</strong> {datos['fabricante']}</p>
+            <p style="font-size:11pt;"><strong>{'MACHINERY DESIGNATION' if en_ingles else 'DENOMINACIÓN DE LA MÁQUINA'}:</strong> {datos['denominacion']}</p>
+            <p style="font-size:10pt;"><strong>{'MODEL / CODE' if en_ingles else 'MODELO'}:</strong> {datos['modelo']} | <strong>S/N:</strong> {datos['serie']}</p>
+            <p style="font-size:10pt;"><strong>{'LEGAL MANUFACTURER' if en_ingles else 'FABRICANTE'}:</strong> {datos['fabricante']}</p>
+            <p style="font-size:9pt; color:#64748b;"><strong>{'DATE OF ISSUE' if en_ingles else 'FECHA DE EMISIÓN'}:</strong> {fecha_hoy}</p>
         </div>
 
         <h2>{t_sec1}</h2>
         <table>
-            <tr><th width="30%">{'Manufacturer' if en_ingles else 'Fabricante'}:</th><td width="70%">{datos['fabricante']} ({datos['cif']})</td></tr>
-            <tr><th>{'Address' if en_ingles else 'Ubicación / Instalación'}:</th><td>{datos['direccion']}</td></tr>
-            <tr><th>{'Chartered Engineer' if en_ingles else 'Ingeniero Responsable Técnico'}:</th><td>{datos['ingeniero']} (ID: {datos['colegiado']})</td></tr>
-            <tr><th>{'Installed Power' if en_ingles else 'Potencia Eléctrica Instalada'}:</th><td>{datos['potencia']} kW</td></tr>
-            <tr><th>{'Voltage & Frequency' if en_ingles else 'Tensión y Frecuencia'}:</th><td>{datos['tension']} V | {datos['frecuencia']} Hz ({datos['fases']})</td></tr>
-            <tr><th>{'Pneumatic Pressure' if en_ingles else 'Presión Neumática'}:</th><td>{datos['presion']} bar</td></tr>
-            <tr><th>{'Year of Manufacture' if en_ingles else 'Año de Construcción'}:</th><td>{datos['anio']}</td></tr>
+            <tr><th width="30%">{'Manufacturer / Legal Entity' if en_ingles else 'Fabricante'}:</th><td width="70%">{datos['fabricante']} ({datos['cif']})</td></tr>
+            <tr><th>{'Manufacturing Plant Address' if en_ingles else 'Ubicación / Instalación'}:</th><td>{datos['direccion']}</td></tr>
+            <tr><th>{'Chartered Technical Engineer' if en_ingles else 'Ingeniero Responsable Técnico'}:</th><td>{datos['ingeniero']} (ID: {datos['colegiado']})</td></tr>
+            <tr><th>{'Installed Electric Power' if en_ingles else 'Potencia Eléctrica Instalada'}:</th><td>{datos['potencia']} kW</td></tr>
+            <tr><th>{'Nominal Voltage & Frequency' if en_ingles else 'Tensión y Frecuencia'}:</th><td>{datos['tension']} V | {datos['frecuencia']} Hz ({datos['fases']})</td></tr>
+            <tr><th>{'Pneumatic Supply Pressure' if en_ingles else 'Presión Neumática'}:</th><td>{datos['presion']} bar</td></tr>
+            <tr><th>{'Year of Construction' if en_ingles else 'Año de Construcción'}:</th><td>{datos['anio']}</td></tr>
         </table>
 
         <h2>{t_sec2}</h2>
         <table>
             <thead>
                 <tr>
-                    <th width="20%">{'Hazard Area' if en_ingles else 'Zona y Peligro'}</th>
-                    <th width="15%">{'Standard' if en_ingles else 'Norma Aplicada'}</th>
-                    <th width="12%">{'Initial HRN' if en_ingles else 'Riesgo Inicial'}</th>
+                    <th width="20%">{'Hazard Zone & Risk' if en_ingles else 'Zona y Peligro'}</th>
+                    <th width="15%">{'Applied Harmonized Standard' if en_ingles else 'Norma Aplicada'}</th>
+                    <th width="12%">{'Initial Risk (HRN)' if en_ingles else 'Riesgo Inicial'}</th>
                     <th width="8%">PLr</th>
-                    <th width="30%">{'Safety Control Applied' if en_ingles else 'Medida de Ingeniería'}</th>
-                    <th width="15%">{'Residual HRN' if en_ingles else 'Riesgo Residual'}</th>
+                    <th width="30%">{'Engineering Safeguard Applied' if en_ingles else 'Medida de Ingeniería'}</th>
+                    <th width="15%">{'Residual Risk (HRN)' if en_ingles else 'Riesgo Residual'}</th>
                 </tr>
             </thead>
             <tbody>
@@ -410,13 +420,13 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
         <h2 style="margin-top:35px;">{t_sec4}</h2>
         <div style="{blur_declaracion}">
             <p style="font-size:9pt; text-align:justify;">
-                {'The undersigned declares on behalf of the manufacturer that the described machinery fulfills all relevant health and safety requirements of Regulation (EU) 2023/1230 on machinery, as well as Directives 2014/30/EU (EMC) and 2014/35/EU (LVD).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
+                {'The undersigned declares on behalf of the manufacturer, under sole responsibility, that the machinery described herein fulfills all relevant Essential Health and Safety Requirements laid down in Regulation (EU) 2023/1230 of the European Parliament and of the Council on machinery, as well as Directive 2014/30/EU (EMC) and Directive 2014/35/EU (Low Voltage).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
             </p>
-            <p style="font-size:9pt;"><strong>{'Authorized Person to compile Technical File' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (Col. Nº: {datos['colegiado']}).</p>
+            <p style="font-size:9pt;"><strong>{'Authorized Person to compile the Technical Dossier' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (ID: {datos['colegiado']}).</p>
             
             <div style="margin-top:50px; display:flex; justify-content:space-between;">
                 <div style="width:45%; border-top:1px solid #000; padding-top:8px; text-align:center; font-size:9pt;">
-                    <strong>{'Manufacturer Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
+                    <strong>{'Authorized Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
                     <span style="color:#64748b; font-size:8pt;">{datos['fabricante']}</span>
                 </div>
                 <div style="width:45%; border-top:1px solid #000; padding-top:8px; text-align:center; font-size:9pt;">
@@ -443,27 +453,27 @@ st.markdown(
 )
 
 # --- SIDEBAR: ESTADO Y CONTROL DE LICENCIAS ---
-st.sidebar.header("💳 Licencia Profesional" if es_espanol else "💳 Commercial License")
+st.sidebar.header("💳 Commercial License" if es_en else "💳 Licencia Profesional")
 
 if st.session_state.tipo_licencia == "ilimitada":
     st.sidebar.markdown(
         f"""
         <div style="background:#f0fdf4; border:1px solid #86efac; padding:12px; border-radius:8px; color:#166534; font-weight:bold;">
-            🟢 {'PLAN OFICINA TÉCNICA (149€/mes)' if es_espanol else 'ENGINEERING OFFICE PLAN (149€/mo)'}<br>
+            🟢 {'ENGINEERING OFFICE PLAN (149€/mo)' if es_en else 'PLAN OFICINA TÉCNICA (149€/mes)'}<br>
             <span style="font-size:11px; font-weight:normal;">{st.session_state.cliente_email}</span><br>
-            <span style="font-size:10px; color:#15803d;">✨ Máquinas Ilimitadas Desbloqueadas</span>
+            <span style="font-size:10px; color:#15803d;">✨ {'Unlimited Machines & JSON Export Unlocked' if es_en else 'Máquinas Ilimitadas Desbloqueadas'}</span>
         </div>
         """,
         unsafe_allow_html=True
     )
 elif st.session_state.tipo_licencia == "individual":
-    vinculo_texto = f"S/N: {st.session_state.serie_vinculada}" if st.session_state.serie_vinculada else "Pendiente de vincular"
+    vinculo_texto = f"S/N: {st.session_state.serie_vinculada}" if st.session_state.serie_vinculada else ("Pending download" if es_en else "Pendiente de vincular")
     st.sidebar.markdown(
         f"""
         <div style="background:#eff6ff; border:1px solid #93c5fd; padding:12px; border-radius:8px; color:#1e40af; font-weight:bold;">
-            🔵 {'PLAN EXPEDIENTE INDIVIDUAL (49€)' if es_espanol else 'SINGLE MACHINE LICENSE (49€)'}<br>
+            🔵 {'SINGLE DOSSIER LICENSE (49€)' if es_en else 'PLAN EXPEDIENTE INDIVIDUAL (49€)'}<br>
             <span style="font-size:11px; font-weight:normal;">{st.session_state.cliente_email}</span><br>
-            <span style="font-size:10px; color:#1d4ed8;">🔒 Vinculado a 1 Máquina ({vinculo_texto})</span>
+            <span style="font-size:10px; color:#1d4ed8;">🔒 {'Locked to 1 Machine' if es_en else 'Vinculado a 1 Máquina'} ({vinculo_texto})</span>
         </div>
         """,
         unsafe_allow_html=True
@@ -472,17 +482,17 @@ else:
     st.sidebar.markdown(
         f"""
         <div style="background:#fffbeb; border:1px solid #fde68a; padding:10px; border-radius:8px; font-size:12px; color:#92400e;">
-            ⚠️ <strong>{'MODO EVALUACIÓN' if es_espanol else 'EVALUATION MODE'}</strong><br>
-            {'Previsualización con secciones desenfocadas. Desbloquea tu expediente oficial:' if es_espanol else 'Preview with blurred sections. Unlock your signable file:'}
+            ⚠️ <strong>{'EVALUATION MODE' if es_en else 'MODO EVALUACIÓN'}</strong><br>
+            {'Watermarked preview with blurred sections. Unlock signable technical file:' if es_en else 'Previsualización con secciones desenfocadas. Desbloquea tu expediente oficial:'}
         </div>
         """,
         unsafe_allow_html=True
     )
-    st.sidebar.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:6px;">📄 {"Expediente Único (49 €)" if es_espanol else "Single Dossier (49 €)"}</a>', unsafe_allow_html=True)
-    st.sidebar.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 {"Oficina Técnica Ilimitada (149 €/mes)" if es_espanol else "Unlimited Plan (149 €/mo)"}</a>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none; margin-bottom:6px;">📄 {"Single Dossier (49 €)" if es_en else "Expediente Único (49 €)"}</a>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; display:block; text-align:center; padding:9px; border-radius:6px; font-weight:bold; font-size:12px; text-decoration:none;">🏢 {"Unlimited Engineering Office (149 €/mo)" if es_en else "Oficina Técnica Ilimitada (149 €/mes)"}</a>', unsafe_allow_html=True)
 
 if st.session_state.tipo_licencia != "ninguna":
-    if st.sidebar.button("Cerrar Sesión" if es_espanol else "Logout"):
+    if st.sidebar.button("Logout" if es_en else "Cerrar Sesión"):
         st.session_state.tipo_licencia = "ninguna"
         st.session_state.cliente_email = ""
         st.session_state.customer_id = ""
@@ -490,9 +500,9 @@ if st.session_state.tipo_licencia != "ninguna":
         st.rerun()
 else:
     with st.sidebar.form("form_recuperar"):
-        st.write("**¿Ya compraste una licencia?**" if es_espanol else "**Already purchased a license?**")
-        correo_licencia = st.text_input("Email Stripe:")
-        if st.form_submit_button("🔑 Validar" if es_espanol else "🔑 Validate"):
+        st.write("**Already purchased a license?**" if es_en else "**¿Ya compraste una licencia?**")
+        correo_licencia = st.text_input("Stripe Email:" if es_en else "Email Stripe:")
+        if st.form_submit_button("🔑 Validate License" if es_en else "🔑 Validar Licencia"):
             if "@" in correo_licencia:
                 valido, tipo, mensaje, cust_id, serie_vinc = comprobar_licencia_en_stripe(correo_licencia)
                 if valido:
@@ -500,137 +510,142 @@ else:
                     st.session_state.cliente_email = correo_licencia.strip().lower()
                     st.session_state.customer_id = cust_id
                     st.session_state.serie_vinculada = serie_vinc
-                    st.success("¡Licencia validada!" if es_espanol else "License verified!")
+                    st.success("License verified!" if es_en else "¡Licencia validada!")
                     st.rerun()
                 else:
                     st.error(mensaje)
 
 st.sidebar.divider()
-st.sidebar.header("💾 Guardar / Cargar" if es_espanol else "💾 Save / Load")
+st.sidebar.header("💾 Save / Load" if es_en else "💾 Guardar / Cargar")
 if st.session_state.tipo_licencia in ["ilimitada"]:
     proyecto_json = json.dumps(st.session_state.peligros_evaluados, indent=2)
     st.sidebar.download_button(
-        label="💾 Exportar Máquina (.json)" if es_espanol else "💾 Export Machine (.json)",
+        label="💾 Export Project (.json)" if es_en else "💾 Exportar Máquina (.json)",
         data=proyecto_json,
-        file_name="Proyecto_Maquina_CE.json",
+        file_name="CE_Machinery_Project.json" if es_en else "Proyecto_Maquina_CE.json",
         mime="application/json"
     )
-    archivo_cargado = st.sidebar.file_uploader("📂 Importar (.json):" if es_espanol else "📂 Import (.json):", type=["json"])
+    archivo_cargado = st.sidebar.file_uploader("📂 Import Project (.json):" if es_en else "📂 Importar (.json):", type=["json"])
     if archivo_cargado:
         try:
             datos_cargados = json.load(archivo_cargado)
             if isinstance(datos_cargados, list):
                 st.session_state.peligros_evaluados = datos_cargados
-                st.sidebar.success("Cargado con éxito" if es_espanol else "Loaded successfully")
+                st.sidebar.success("Loaded successfully" if es_en else "Cargado con éxito")
         except Exception:
-            st.sidebar.error("Archivo no válido")
+            st.sidebar.error("Invalid file" if es_en else "Archivo no válido")
 else:
-    st.sidebar.info("🔒 Guardado en JSON exclusivo del **Plan Oficina Técnica (149€/mes)**." if es_espanol else "🔒 JSON backup requires **Unlimited Plan (149€/mo)**.")
+    st.sidebar.info("🔒 JSON backup requires **Unlimited Plan (149€/mo)**." if es_en else "🔒 Guardado en JSON exclusivo del **Plan Oficina Técnica (149€/mes)**.")
 
-# --- TABS DE TRABAJO ---
+# --- TABS PRINCIPALES ---
 titulos_tabs = [
-    "🏭 1. Ficha Técnica" if es_espanol else "🏭 1. Machine Data",
-    "⚠️ 2. Matriz HRN (ISO 12100)" if es_espanol else "⚠️ 2. HRN Risk Matrix",
-    "🛡️ 3. Nivel PLr (ISO 13849)" if es_espanol else "🛡️ 3. Safety Level (PLr)",
-    "🏷️ 4. Placa CE Metálica" if es_espanol else "🏷️ 4. Metallic CE Plate",
-    "📄 5. Expediente y Descarga" if es_espanol else "📄 5. Dossier & Download"
+    "🏭 1. Technical Data" if es_en else "🏭 1. Ficha Técnica",
+    "⚠️ 2. Risk Matrix (ISO 12100)" if es_en else "⚠️ 2. Matriz HRN (ISO 12100)",
+    "🛡️ 3. PLr Rating (ISO 13849)" if es_en else "🛡️ 3. Nivel PLr (ISO 13849)",
+    "🏷️ 4. CE Nameplate" if es_en else "🏷️ 4. Placa CE Metálica",
+    "📄 5. Technical Dossier & PDF" if es_en else "📄 5. Expediente y Descarga"
 ]
 tab_maquina, tab_hrn, tab_plr, tab_placa, tab_expediente = st.tabs(titulos_tabs)
 
 # --- PESTAÑA 1: DATOS GENERALES ---
 with tab_maquina:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Identificación de la Máquina" if es_espanol else "Machine Identification")
+    st.subheader("Machine Identification" if es_en else "Identificación de la Máquina")
     
     col1, col2 = st.columns(2)
     with col1:
-        denominacion = st.text_input("Denominación oficial:" if es_espanol else "Official Machinery Name:", value="Línea de Envasado y Paletizado Robotizado")
-        fabricante = st.text_input("Razón Social Fabricante:" if es_espanol else "Manufacturer Legal Name:", value="Mecanizados y Robótica del Norte S.L.")
-        cif = st.text_input("NIF / CIF / VAT ID:", value="B-95847291")
-        direccion = st.text_input("Dirección de fabricación:" if es_espanol else "Manufacturing Address:", value="Polígono Industrial Erletxes, Manzana 4, 48960 Galdakao")
+        denominacion = st.text_input("Official Machinery Name:" if es_en else "Denominación oficial:", value="Robotic Packaging & Palletizing Cell" if es_en else "Línea de Envasado y Paletizado Robotizado")
+        fabricante = st.text_input("Manufacturer Legal Name:" if es_en else "Razón Social Fabricante:", value="Northern Automation & Robotics Ltd." if es_en else "Mecanizados y Robótica del Norte S.L.")
+        cif = st.text_input("Tax / VAT ID (CIF/NIF):" if es_en else "NIF / CIF / VAT ID:", value="ES-B95847291")
+        direccion = st.text_input("Manufacturing Address:" if es_en else "Dirección de fabricación:", value="Industrial Park West, Building 4, 48960 Bilbao (Spain)" if es_en else "Polígono Industrial Erletxes, Manzana 4, 48960 Galdakao")
     with col2:
-        modelo = st.text_input("Modelo / Código:" if es_espanol else "Model / Ref Code:", value="ROBOPACK-2025")
-        serie = st.text_input("Número de Serie (S/N):" if es_espanol else "Serial Number (S/N):", value="SN-2025-0842")
-        anio = st.number_input("Año de Fabricación:" if es_espanol else "Year of Manufacture:", min_value=2020, max_value=2030, value=2025)
-        ingeniero = st.text_input("Ingeniero Responsable:" if es_espanol else "Chartered Technical Engineer:", value="Alberto Lantarón")
-        colegiado = st.text_input("Nº Colegiado / DNI:" if es_espanol else "Professional ID / License:", value="COIIB-48192")
+        modelo = st.text_input("Model / Reference Code:" if es_en else "Modelo / Código:", value="ROBOPACK-2025")
+        serie = st.text_input("Serial Number (S/N):" if es_en else "Número de Serie (S/N):", value="SN-2025-0842")
+        anio = st.number_input("Year of Manufacture:" if es_en else "Año de Fabricación:", min_value=2020, max_value=2030, value=2025)
+        ingeniero = st.text_input("Lead Technical Engineer:" if es_en else "Ingeniero Responsable:", value="Alberto Lantarón")
+        colegiado = st.text_input("Chartered License / ID:" if es_en else "Nº Colegiado / DNI:", value="COIIB-48192")
 
     st.divider()
-    st.subheader("Especificaciones Energéticas (EN 60204-1)" if es_espanol else "Energy Specifications (EN 60204-1)")
+    st.subheader("Energy & Environmental Specifications (EN 60204-1)" if es_en else "Especificaciones Energéticas (EN 60204-1)")
     col_e1, col_e2, col_e3, col_e4 = st.columns(4)
     with col_e1:
-        potencia = st.number_input("Potencia (kW):" if es_espanol else "Power (kW):", value=12.5, step=0.5)
+        potencia = st.number_input("Installed Power (kW):" if es_en else "Potencia (kW):", value=12.5, step=0.5)
     with col_e2:
-        tension = st.selectbox("Tensión / Voltage (V):", [400, 230, 48, 24])
+        tension = st.selectbox("Voltage (V):" if es_en else "Tensión (V):", [400, 230, 48, 24])
     with col_e3:
-        fases = st.selectbox("Red / Phase:", ["Trifásica (3P+N+T)", "Monofásica (1P+N+T)"] if es_espanol else ["Three-phase (3P+N+E)", "Single-phase (1P+N+E)"])
+        fases_opts = ["Three-phase (3P+N+PE)", "Single-phase (1P+N+PE)"] if es_en else ["Trifásica (3P+N+T)", "Monofásica (1P+N+T)"]
+        fases = st.selectbox("Power Grid Phase:" if es_en else "Red / Fases:", fases_opts)
     with col_e4:
-        presion = st.number_input("Presión (bar):" if es_espanol else "Pressure (bar):", value=6.0, step=0.5)
+        presion = st.number_input("Pneumatic Pressure (bar):" if es_en else "Presión Neumática (bar):", value=6.0, step=0.5)
         
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PESTAÑA 2: MÉTODO CUANTITATIVO HRN ---
 with tab_hrn:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Evaluación Cuantitativa de Riesgo HRN (ISO 12100)" if es_espanol else "Quantitative HRN Risk Assessment (ISO 12100)")
-    st.write("Fórmula normalizada: $\\text{HRN} = LO \\times FE \\times DPH \\times NP$. Permite justificar matemáticamente la reducción del riesgo a nivel Aceptable.")
+    st.subheader("Quantitative HRN Risk Assessment (ISO 12100)" if es_en else "Evaluación Cuantitativa de Riesgo HRN (ISO 12100)")
+    st.write("Normalized Formula: $\\text{HRN} = LO \\times FE \\times DPH \\times NP$. Justifies residual risk reduction to legally acceptable limits." if es_en else "Fórmula normalizada: $\\text{HRN} = LO \\times FE \\times DPH \\times NP$. Permite justificar matemáticamente la reducción del riesgo a nivel Aceptable.")
     
     with st.form("form_nuevo_riesgo"):
-        st.markdown("#### Añadir Peligro" if es_espanol else "#### Add Hazard")
+        st.markdown("#### Add Machine Hazard" if es_en else "#### Añadir Peligro")
         c_r1, c_r2 = st.columns(2)
         with c_r1:
-            zona_input = st.text_input("Zona / Componente:" if es_espanol else "Machine Area / Part:", placeholder="Zona de corte / Cabezal motor")
-            peligro_input = st.text_input("Peligro específico:" if es_espanol else "Hazard description:", placeholder="Cizallamiento / Atrapamiento")
-            norma_input = st.text_input("Norma armonizada:" if es_espanol else "Harmonized Standard:", value="UNE-EN ISO 14120 / UNE-EN ISO 13857")
+            zona_input = st.text_input("Hazard Zone / Component:" if es_en else "Zona / Componente:", placeholder="Cutting tool / Drive motor" if es_en else "Zona de corte / Cabezal motor")
+            peligro_input = st.text_input("Identified Hazard:" if es_en else "Peligro específico:", placeholder="Shearing / High pressure fluid ejection" if es_en else "Cizallamiento / Atrapamiento")
+            norma_input = st.text_input("Applied Standard:" if es_en else "Norma armonizada:", value="EN ISO 14120 / EN ISO 13857")
         with c_r2:
-            medida_input = st.text_area("Medida de ingeniería adoptada:" if es_espanol else "Engineering safety measure applied:", placeholder="Resguardo fijo perimetral con enclavamiento.")
+            medida_input = st.text_area("Engineering Safeguard:" if es_en else "Medida de ingeniería adoptada:", placeholder="Fixed perimeter guarding interlocked with safety switch." if es_en else "Resguardo fijo perimetral con enclavamiento.")
 
         c_p1, c_p2, c_p3, c_p4 = st.columns(4)
         with c_p1:
-            lo = st.selectbox("Probabilidad / Likelihood (LO):", list(VALORES_LO.keys()), index=4)
+            lo = st.selectbox("Likelihood (LO):" if es_en else "Probabilidad (LO):", list(VALORES_LO.keys()), index=4)
         with c_p2:
-            fe = st.selectbox("Frecuencia / Frequency (FE):", list(VALORES_FE.keys()), index=4)
+            fe = st.selectbox("Frequency of Exposure (FE):" if es_en else "Frecuencia (FE):", list(VALORES_FE.keys()), index=4)
         with c_p3:
-            dph = st.selectbox("Daño potencial / Harm (DPH):", list(VALORES_DPH.keys()), index=3)
+            dph = st.selectbox("Degree of Potential Harm (DPH):" if es_en else "Daño potencial (DPH):", list(VALORES_DPH.keys()), index=3)
         with c_p4:
-            np = st.selectbox("Personas / Persons (NP):", list(VALORES_NP.keys()), index=0)
+            np = st.selectbox("Number of Persons (NP):" if es_en else "Personas expuestas (NP):", list(VALORES_NP.keys()), index=0)
 
         hrn_calc_inicial = VALORES_LO[lo] * VALORES_FE[fe] * VALORES_DPH[dph] * VALORES_NP[np]
-        estado_calc_inicial, color_calc_inicial = clasificar_hrn(hrn_calc_inicial)
+        estado_calc_inicial, color_calc_inicial = clasificar_hrn(hrn_calc_inicial, en_ingles=es_en)
 
-        st.markdown(f"**{'Riesgo Inicial' if es_espanol else 'Initial Risk'}:** <span style='color:{color_calc_inicial}; font-weight:bold; font-size:16px;'>HRN: {hrn_calc_inicial:.1f} ({estado_calc_inicial})</span>", unsafe_allow_html=True)
+        st.markdown(f"**{'Initial Risk' if es_en else 'Riesgo Inicial'}:** <span style='color:{color_calc_inicial}; font-weight:bold; font-size:16px;'>HRN: {hrn_calc_inicial:.1f} ({estado_calc_inicial})</span>", unsafe_allow_html=True)
         
-        btn_guardar_riesgo = st.form_submit_button("➕ Registrar en Matriz" if es_espanol else "➕ Register in Matrix")
+        btn_guardar_riesgo = st.form_submit_button("➕ Register Hazard" if es_en else "➕ Registrar en Matriz")
         if btn_guardar_riesgo:
             if zona_input and peligro_input:
                 hrn_residual = round(hrn_calc_inicial * 0.02, 1)
-                estado_res, color_res = clasificar_hrn(hrn_residual)
                 
-                st.session_state.peligros_evaluados.append({
-                    "zona": zona_input,
-                    "peligro": peligro_input,
+                nuevo_elem = {
+                    "zona_es": zona_input,
+                    "zona_en": zona_input,
+                    "peligro_es": peligro_input,
+                    "peligro_en": peligro_input,
                     "norma": norma_input,
                     "hrn_inicial": hrn_calc_inicial,
-                    "estado_inicial": estado_calc_inicial,
-                    "color_inicial": color_calc_inicial,
                     "plr": "PL d",
-                    "medida": medida_input,
-                    "hrn_residual": hrn_residual,
-                    "estado_residual": estado_res,
-                    "color_residual": color_res
-                })
-                st.success("Guardado en el expediente.")
+                    "medida_es": medida_input,
+                    "medida_en": medida_input,
+                    "hrn_residual": hrn_residual
+                }
+                st.session_state.peligros_evaluados.append(nuevo_elem)
+                st.success("Registered in Technical Dossier." if es_en else "Guardado en el expediente.")
                 st.rerun()
 
-    st.markdown("#### Matriz de Riesgos Registrados" if es_espanol else "#### Active Risk Register")
+    st.markdown("#### Active Risk Register" if es_en else "#### Matriz de Riesgos Registrados")
     for idx, r in enumerate(st.session_state.peligros_evaluados):
-        with st.expander(f"📍 {r['zona']} — {r['peligro']}"):
+        z_ver = r.get("zona_en" if es_en else "zona_es", r.get("zona", ""))
+        p_ver = r.get("peligro_en" if es_en else "peligro_es", r.get("peligro", ""))
+        e_ini, c_ini = clasificar_hrn(r["hrn_inicial"], en_ingles=es_en)
+        e_res, c_res = clasificar_hrn(r["hrn_residual"], en_ingles=es_en)
+        
+        with st.expander(f"📍 {z_ver} — {p_ver}"):
             col_m1, col_m2 = st.columns(2)
             with col_m1:
-                st.markdown(f"**Inicial:** <span style='color:{r['color_inicial']}; font-weight:bold;'>HRN {r['hrn_inicial']} ({r['estado_inicial']})</span>", unsafe_allow_html=True)
+                st.markdown(f"**{'Initial' if es_en else 'Inicial'}:** <span style='color:{c_ini}; font-weight:bold;'>HRN {r['hrn_inicial']:.1f} ({e_ini})</span>", unsafe_allow_html=True)
             with col_m2:
-                st.markdown(f"**Residual:** <span style='color:{r['color_residual']}; font-weight:bold;'>HRN {r['hrn_residual']} ({r['estado_residual']})</span>", unsafe_allow_html=True)
-            if st.button("🗑️ Eliminar" if es_espanol else "🗑️ Delete", key=f"del_{idx}"):
+                st.markdown(f"**{'Residual' if es_en else 'Residual'}:** <span style='color:{c_res}; font-weight:bold;'>HRN {r['hrn_residual']:.1f} ({e_res})</span>", unsafe_allow_html=True)
+            if st.button("🗑️ Delete" if es_en else "🗑️ Eliminar", key=f"del_{idx}"):
                 st.session_state.peligros_evaluados.pop(idx)
                 st.rerun()
 
@@ -639,17 +654,21 @@ with tab_hrn:
 # --- PESTAÑA 3: DETERMINACIÓN DEL PLr (ISO 13849-1) ---
 with tab_plr:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Nivel de Rendimiento Requerido (PLr - ISO 13849-1)" if es_espanol else "Required Performance Level (PLr - ISO 13849-1)")
+    st.subheader("Required Performance Level (PLr - ISO 13849-1)" if es_en else "Nivel de Rendimiento Requerido (PLr - ISO 13849-1)")
     
     col_pl1, col_pl2 = st.columns([2, 1])
     with col_pl1:
-        sev = st.radio("Severidad de la lesión (S):" if es_espanol else "Severity of injury (S):", ["S1 (Lesión leve reversible)" if es_espanol else "S1 (Slight reversible injury)", "S2 (Lesión grave irreversible o muerte)" if es_espanol else "S2 (Serious irreversible injury or death)"])
-        frec = st.radio("Frecuencia de exposición (F):" if es_espanol else "Frequency of exposure (F):", ["F1 (Poco frecuente / Exposición corta)" if es_espanol else "F1 (Rare to short exposure)", "F2 (Frecuente a continua)" if es_espanol else "F2 (Frequent to continuous exposure)"])
-        pos = st.radio("Posibilidad de evitar el peligro (P):" if es_espanol else "Possibility of avoiding hazard (P):", ["P1 (Posible en determinadas condiciones)" if es_espanol else "P1 (Possible under specific conditions)", "P2 (Casi imposible de evitar)" if es_espanol else "P2 (Scarcely possible)"])
+        s_opts = ["S1 (Slight reversible injury)", "S2 (Serious irreversible injury or death)"] if es_en else ["S1 (Lesión leve reversible)", "S2 (Lesión grave irreversible o muerte)"]
+        f_opts = ["F1 (Rare to short exposure)", "F2 (Frequent to continuous exposure)"] if es_en else ["F1 (Poco frecuente / Exposición corta)", "F2 (Frecuente a continua)"]
+        p_opts = ["P1 (Possible under specific conditions)", "P2 (Scarcely possible / unavoidable)"] if es_en else ["P1 (Posible en determinadas condiciones)", "P2 (Casi imposible de evitar)"]
+        
+        sev = st.radio("Injury Severity (S):" if es_en else "Severidad de la lesión (S):", s_opts)
+        frec = st.radio("Exposure Frequency (F):" if es_en else "Frecuencia de exposición (F):", f_opts)
+        pos = st.radio("Possibility of Avoidance (P):" if es_en else "Posibilidad de evitar el peligro (P):", p_opts)
         
     with col_pl2:
         plr_resultado = calcular_plr(sev, frec, pos)
-        st.markdown("#### Nivel Exigido:" if es_espanol else "#### Required Level:")
+        st.markdown("#### Required Safety Level:" if es_en else "#### Nivel Exigido:")
         st.markdown(f'<div style="background:#e0f2fe; color:#0369a1; border:2px solid #0284c7; padding:10px; border-radius:8px; font-size:22px; font-weight:bold; text-align:center;">{plr_resultado}</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -657,8 +676,8 @@ with tab_plr:
 # --- PESTAÑA 4: PLACA CE METÁLICA (SIMULADOR) ---
 with tab_placa:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Simulador de Placa CE Físico (Art. 16 y Anexo III)" if es_espanol else "Metallic Nameplate Simulator (Art. 16 & Annex III)")
-    st.write("Vista previa de la placa indeleble que debe remacharse al chasis de la máquina:")
+    st.subheader("Metallic CE Nameplate Simulator (Art. 16 & Annex III)" if es_en else "Simulador de Placa CE Físico (Art. 16 y Anexo III)")
+    st.write("Visual preview of the indelible plate that must be physically riveted to the machine frame:" if es_en else "Vista previa de la placa indeleble que debe remacharse al chasis de la máquina:")
     
     st.markdown(
         f"""
@@ -671,10 +690,10 @@ with tab_placa:
             <p style="margin:0; font-weight:bold; font-size:12pt; text-align:center;">{fabricante}</p>
             <p style="margin:0; font-size:8.5pt; text-align:center; color:#334155;">{direccion}</p>
             <hr style="border:1px solid #475569; margin:10px 0;">
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'MACHINE' if not es_espanol else 'MÁQUINA'}:</strong> {denominacion}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'MODEL' if not es_espanol else 'MODELO'}:</strong> {modelo}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>S/N:</strong> {serie} &nbsp;|&nbsp; <strong>{'YEAR' if not es_espanol else 'AÑO'}:</strong> {anio}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'POWER' if not es_espanol else 'POTENCIA'}:</strong> {potencia} kW &nbsp;|&nbsp; <strong>{'VOLTAGE' if not es_espanol else 'TENSIÓN'}:</strong> {tension} V</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>{'MACHINE' if es_en else 'MÁQUINA'}:</strong> {denominacion}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>{'MODEL' if es_en else 'MODELO'}:</strong> {modelo}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>S/N:</strong> {serie} &nbsp;|&nbsp; <strong>{'YEAR' if es_en else 'AÑO'}:</strong> {anio}</p>
+            <p style="margin:2px 0; font-size:9pt;"><strong>{'POWER' if es_en else 'POTENCIA'}:</strong> {potencia} kW &nbsp;|&nbsp; <strong>{'VOLTAGE' if es_en else 'TENSIÓN'}:</strong> {tension} V</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -684,9 +703,9 @@ with tab_placa:
 # --- PESTAÑA 5: EXPEDIENTE OFICIAL Y CONTROL DE VINCULACIÓN ---
 with tab_expediente:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.subheader("Expediente Técnico Completo y Marcado CE" if es_espanol else "Technical Construction File & CE Marking")
+    st.subheader("Official Technical Construction File & CE Marking" if es_en else "Expediente Técnico Completo y Marcado CE")
     
-    # Comprobación de vinculación para licencias individuales (49€)
+    # Comprobación de vinculación estricta para plan 49€
     serie_actual = serie.strip().upper()
     bloqueado_por_serie = False
     
@@ -712,40 +731,39 @@ with tab_expediente:
         "presion": presion
     }
 
-    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados, st.session_state.tipo_licencia, en_ingles=(not es_espanol), bloqueado_por_serie=bloqueado_por_serie)
+    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados, st.session_state.tipo_licencia, en_ingles=es_en, bloqueado_por_serie=bloqueado_por_serie)
     
     col_d1, col_d2 = st.columns([1, 1])
     with col_d1:
-        st.markdown("#### 1. Descarga del Documento Legal" if es_espanol else "#### 1. Official Document Download")
+        st.markdown("#### 1. Official Dossier Download" if es_en else "#### 1. Descarga del Documento Legal")
         
-        # Caso 1: Licencia Ilimitada (149€/mes) o Master Admin
+        # Caso 1: Licencia Ilimitada (149€/mes) o Admin
         if st.session_state.tipo_licencia == "ilimitada":
             st.download_button(
-                label="📥 Descargar Expediente Oficial (PDF)" if es_espanol else "📥 Download Official File (PDF)",
+                label="📥 Download Official Technical Dossier (PDF)" if es_en else "📥 Descargar Expediente Oficial (PDF)",
                 data=html_dossier,
-                file_name=f"Expediente_CE_{modelo}_{serie}.html",
+                file_name=f"CE_Technical_File_{modelo}_{serie}.html",
                 mime="text/html",
                 type="primary"
             )
-            st.success("Plan Oficina Técnica: Descargas y máquinas ilimitadas.")
+            st.success("Engineering Office Plan Active: Unlimited machines & downloads." if es_en else "Plan Oficina Técnica: Descargas y máquinas ilimitadas.")
 
-        # Caso 2: Licencia Individual (49€) - Control de máquina única
+        # Caso 2: Licencia Individual (49€)
         elif st.session_state.tipo_licencia == "individual":
             if bloqueado_por_serie:
-                st.error(f"⚠️ Esta licencia de 49 € ya fue consumida y vinculada a la máquina con **S/N: {st.session_state.serie_vinculada}**.")
-                st.info("Para certificar una nueva máquina diferente, adquiere otro Expediente Único (49 €) o suscríbete al Plan Oficina Técnica Ilimitada (149 €/mes).")
-                st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-right:8px;">Nuevo Expediente (49 €)</a>', unsafe_allow_html=True)
-                st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Plan Ilimitado (149 €/mes)</a>', unsafe_allow_html=True)
+                st.error(f"⚠️ {'This 49 € license has already been redeemed and locked to machine with' if es_en else 'Esta licencia de 49 € ya fue consumida y vinculada a la máquina con'} **S/N: {st.session_state.serie_vinculada}**.")
+                st.info("To certify a different machine, please purchase a new Single Dossier (49 €) or upgrade to the Unlimited Engineering Office Plan (149 €/mo)." if es_en else "Para certificar una nueva máquina diferente, adquiere otro Expediente Único (49 €) o suscríbete al Plan Oficina Técnica Ilimitada (149 €/mes).")
+                st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-right:8px;">{"New Dossier (49 €)" if es_en else "Nuevo Expediente (49 €)"}</a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">{"Unlimited Plan (149 €/mo)" if es_en else "Plan Ilimitado (149 €/mes)"}</a>', unsafe_allow_html=True)
             else:
                 descarga_click = st.download_button(
-                    label="📥 Descargar y Vincular a esta Máquina (PDF)",
+                    label="📥 Download and Lock License to this Machine (PDF)" if es_en else "📥 Descargar y Vincular a esta Máquina (PDF)",
                     data=html_dossier,
-                    file_name=f"Expediente_CE_{modelo}_{serie}.html",
+                    file_name=f"CE_Technical_File_{modelo}_{serie}.html",
                     mime="text/html",
                     type="primary"
                 )
                 if descarga_click:
-                    # Vinculamos esta licencia de por vida al S/N de esta máquina
                     if not st.session_state.serie_vinculada:
                         st.session_state.serie_vinculada = serie_actual
                         if stripe and stripe_key and st.session_state.customer_id:
@@ -758,20 +776,20 @@ with tab_expediente:
                                 pass
                         st.rerun()
 
-                st.caption(f"🔒 Al descargar, tu licencia quedará vinculada exclusivamente a la máquina con número de serie: **{serie}**.")
+                st.caption(f"🔒 {'Upon downloading, your license will be permanently tied to Serial Number:' if es_en else 'Al descargar, tu licencia quedará vinculada exclusivamente a la máquina con número de serie:'} **{serie}**.")
 
-        # Caso 3: Modo Evaluación sin pagar
+        # Caso 3: Sin licencia
         else:
-            st.warning("🔒 Expediente oficial visable protegido tras licencia." if es_espanol else "🔒 Full official file protected behind license.")
-            st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">Desbloquear Expediente Único (49 €)</a>', unsafe_allow_html=True)
-            st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Contratar Plan Oficina Técnica (149 €/mes)</a>', unsafe_allow_html=True)
+            st.warning("🔒 Full official file protected behind license." if es_en else "🔒 Expediente oficial visable protegido tras licencia.")
+            st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">{"Unlock Single Machine Dossier (49 €)" if es_en else "Desbloquear Expediente Único (49 €)"}</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">{"Subscribe to Unlimited Plan (149 €/mo)" if es_en else "Contratar Plan Oficina Técnica (149 €/mes)"}</a>', unsafe_allow_html=True)
             
     with col_d2:
-        st.markdown("#### 2. Estado de Certificación Técnica" if es_espanol else "#### 2. Technical Compliance Status")
-        st.metric("Total Peligros Evaluados", len(st.session_state.peligros_evaluados))
-        st.metric("Reglamento (UE) 2023/1230", "100% CONFORME", delta="Apto para marcado CE")
+        st.markdown("#### 2. Technical Compliance Status" if es_en else "#### 2. Estado de Certificación Técnica")
+        st.metric("Total Hazards Evaluated" if es_en else "Total Peligros Evaluados", len(st.session_state.peligros_evaluados))
+        st.metric("Regulation (EU) 2023/1230", "100% COMPLIANT" if es_en else "100% CONFORME", delta="CE Marking Ready" if es_en else "Apto para marcado CE")
         
     st.divider()
-    st.markdown("#### Previsualización Oficial (Anti-Copia Activo):" if es_espanol else "#### Official Preview (Anti-Copy Active):")
+    st.markdown("#### Official Technical File Preview:" if es_en else "#### Previsualización Oficial (Anti-Copia Activo):")
     st.components.v1.html(html_dossier, height=650, scrolling=True)
     st.markdown('</div>', unsafe_allow_html=True)
