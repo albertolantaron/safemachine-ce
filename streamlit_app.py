@@ -198,12 +198,10 @@ def comprobar_licencia_en_stripe(email_a_verificar):
         cust = clientes.data[0]
         customer_id = cust.id
         
-        # 1. Comprobar si tiene suscripción activa (Oficina Técnica)
         subs = stripe.Subscription.list(customer=customer_id, status="active")
         if subs.data:
             return True, "ilimitada", ("Active Engineering Office Subscription (149€/mo)" if es_en else "Suscripción Oficina Técnica Activa (149€/mes)"), customer_id, ""
 
-        # 2. Comprobar si pagó un expediente individual (49€)
         cargos = stripe.Charge.list(customer=customer_id, limit=5)
         for cargo in cargos.data:
             if cargo.paid and not cargo.refunded:
@@ -673,31 +671,63 @@ with tab_plr:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PESTAÑA 4: PLACA CE METÁLICA (SIMULADOR) ---
+# --- PESTAÑA 4: PLACA CE METÁLICA (SIMULADOR PROTEGIDO ANTI-CAPTURA) ---
 with tab_placa:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader("Metallic CE Nameplate Simulator (Art. 16 & Annex III)" if es_en else "Simulador de Placa CE Físico (Art. 16 y Anexo III)")
     st.write("Visual preview of the indelible plate that must be physically riveted to the machine frame:" if es_en else "Vista previa de la placa indeleble que debe remacharse al chasis de la máquina:")
     
+    serie_check = serie.strip().upper()
+    bloqueado_placa = False
+    if st.session_state.tipo_licencia == "individual" and st.session_state.serie_vinculada:
+        if serie_check != st.session_state.serie_vinculada.strip().upper():
+            bloqueado_placa = True
+            
+    es_licencia_activa = (st.session_state.tipo_licencia in ["individual", "ilimitada"]) and not bloqueado_placa
+
+    blur_placa = "" if es_licencia_activa else "filter: blur(4px); user-select: none; pointer-events: none; opacity: 0.75;"
+    watermark_html = "" if es_licencia_activa else f"""
+    <div style="position: absolute; top: 40%; left: 5%; width: 90%; transform: rotate(-20deg); background: rgba(225, 29, 72, 0.9); color: white; font-weight: 900; font-size: 13pt; text-align: center; padding: 8px 10px; border-radius: 6px; letter-spacing: 1px; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid white;">
+        {'SAMPLE ONLY • NOT FOR LEGAL USE' if es_en else 'MUESTRA • NO APTO PARA MARCADO REAL'}
+    </div>
+    """
+
     st.markdown(
         f"""
-        <div class="placa-metalica">
-            <div class="placa-remache" style="top:8px; left:8px;"></div>
-            <div class="placa-remache" style="top:8px; right:8px;"></div>
-            <div class="placa-remache" style="bottom:8px; left:8px;"></div>
-            <div class="placa-remache" style="bottom:8px; right:8px;"></div>
-            <div style="font-size:32pt; font-weight:900; letter-spacing:-3px; text-align:center; margin-bottom:5px;">CE</div>
-            <p style="margin:0; font-weight:bold; font-size:12pt; text-align:center;">{fabricante}</p>
-            <p style="margin:0; font-size:8.5pt; text-align:center; color:#334155;">{direccion}</p>
-            <hr style="border:1px solid #475569; margin:10px 0;">
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'MACHINE' if es_en else 'MÁQUINA'}:</strong> {denominacion}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'MODEL' if es_en else 'MODELO'}:</strong> {modelo}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>S/N:</strong> {serie} &nbsp;|&nbsp; <strong>{'YEAR' if es_en else 'AÑO'}:</strong> {anio}</p>
-            <p style="margin:2px 0; font-size:9pt;"><strong>{'POWER' if es_en else 'POTENCIA'}:</strong> {potencia} kW &nbsp;|&nbsp; <strong>{'VOLTAGE' if es_en else 'TENSIÓN'}:</strong> {tension} V</p>
+        <div style="position: relative; max-width: 380px; margin: 15px auto;">
+            {watermark_html}
+            <div class="placa-metalica" style="{blur_placa}">
+                <div class="placa-remache" style="top:8px; left:8px;"></div>
+                <div class="placa-remache" style="top:8px; right:8px;"></div>
+                <div class="placa-remache" style="bottom:8px; left:8px;"></div>
+                <div class="placa-remache" style="bottom:8px; right:8px;"></div>
+                <div style="font-size:32pt; font-weight:900; letter-spacing:-3px; text-align:center; margin-bottom:5px;">CE</div>
+                <p style="margin:0; font-weight:bold; font-size:12pt; text-align:center;">{fabricante}</p>
+                <p style="margin:0; font-size:8.5pt; text-align:center; color:#334155;">{direccion}</p>
+                <hr style="border:1px solid #475569; margin:10px 0;">
+                <p style="margin:2px 0; font-size:9pt;"><strong>{'MACHINE' if es_en else 'MÁQUINA'}:</strong> {denominacion}</p>
+                <p style="margin:2px 0; font-size:9pt;"><strong>{'MODEL' if es_en else 'MODELO'}:</strong> {modelo}</p>
+                <p style="margin:2px 0; font-size:9pt;"><strong>S/N:</strong> {serie} &nbsp;|&nbsp; <strong>{'YEAR' if es_en else 'AÑO'}:</strong> {anio}</p>
+                <p style="margin:2px 0; font-size:9pt;"><strong>{'POWER' if es_en else 'POTENCIA'}:</strong> {potencia} kW &nbsp;|&nbsp; <strong>{'VOLTAGE' if es_en else 'TENSIÓN'}:</strong> {tension} V</p>
+            </div>
         </div>
         """,
         unsafe_allow_html=True
     )
+
+    if not es_licencia_activa:
+        st.markdown(
+            f"""
+            <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:12px; text-align:center; max-width:450px; margin:15px auto; color:#9f1239; font-size:13px;">
+                🔒 <strong>{'WATERMARKED PREVIEW' if es_en else 'VISTA PROTEGIDA CON MARCA DE AGUA'}</strong><br>
+                {'The high-resolution unblurred plate ready for engraving or printing is unlocked upon purchasing your dossier license (49 €).' if es_en else 'La placa nítida en alta resolución lista para grabado láser se desbloquea al adquirir la licencia del expediente (49 €).'}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.success("✅ Placa oficial desbloqueada en alta resolución lista para fabricación/grabado." if not es_en else "✅ Official high-resolution nameplate unlocked and ready for manufacturing/engraving.")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PESTAÑA 5: EXPEDIENTE OFICIAL Y CONTROL DE VINCULACIÓN ---
@@ -705,7 +735,6 @@ with tab_expediente:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader("Official Technical Construction File & CE Marking" if es_en else "Expediente Técnico Completo y Marcado CE")
     
-    # Comprobación de vinculación estricta para plan 49€
     serie_actual = serie.strip().upper()
     bloqueado_por_serie = False
     
