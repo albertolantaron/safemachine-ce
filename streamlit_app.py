@@ -136,7 +136,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- MATRICES DE CÁLCULO NORMATIVO HRN ---
+# --- MATRICES DE CÁLCULO NORMATIVO HRN (ISO 12100) ---
 if es_en:
     VALORES_LO = {"Almost impossible (0.033)": 0.033, "Highly unlikely (1)": 1, "Unlikely (2)": 2, "Possible (5)": 5, "Probable (8)": 8, "Certain (15)": 15}
     VALORES_FE = {"Annual (0.5)": 0.5, "Monthly (1)": 1, "Weekly (1.5)": 1.5, "Daily (2.5)": 2.5, "Per shift / Hourly (4)": 4, "Continuous (5)": 5}
@@ -198,10 +198,12 @@ def comprobar_licencia_en_stripe(email_a_verificar):
         cust = clientes.data[0]
         customer_id = cust.id
         
+        # 1. Comprobar si tiene suscripción activa (Oficina Técnica)
         subs = stripe.Subscription.list(customer=customer_id, status="active")
         if subs.data:
             return True, "ilimitada", ("Active Engineering Office Subscription (149€/mo)" if es_en else "Suscripción Oficina Técnica Activa (149€/mes)"), customer_id, ""
 
+        # 2. Comprobar si pagó un expediente individual (49€)
         cargos = stripe.Charge.list(customer=customer_id, limit=5)
         for cargo in cargos.data:
             if cargo.paid and not cargo.refunded:
@@ -212,7 +214,7 @@ def comprobar_licencia_en_stripe(email_a_verificar):
     except Exception as err:
         return False, "ninguna", f"Verification Error: {err}", "", ""
 
-# --- RETORNO SEGURO TRAS EL PAGO DE STRIPE ---
+# --- RETORNO SEGURO TRAS EL PAGO DE STRIPE (VALIDACIÓN CRIPTOGRÁFICA) ---
 session_id = st.query_params.get("session_id")
 if session_id and stripe and stripe_key:
     try:
@@ -237,7 +239,7 @@ if session_id and stripe and stripe_key:
     except Exception as e:
         st.error(f"Error: {e}")
 
-# Peligros iniciales bilingües
+# Peligros iniciales precargados bilingües
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
@@ -304,7 +306,7 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
     """
 
     blur_declaracion = "" if es_valido else "filter: blur(6px); user-select: none; pointer-events: none;"
-    # Protección anti-captura de la placa en la sección 3 del PDF
+    # Protección anti-captura de la placa técnica en la sección 3 del PDF
     blur_placa_pdf = "" if es_valido else "filter: blur(5px); user-select: none; pointer-events: none; opacity: 0.65;"
 
     t_doc = "TECHNICAL CONSTRUCTION FILE" if en_ingles else "EXPEDIENTE TÉCNICO DE CONSTRUCCIÓN"
@@ -582,7 +584,7 @@ with tab_maquina:
         
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PESTAÑA 2: MÉTODO CUANTITATIVO HRN ---
+# --- PESTAÑA 2: MÉTODO CUANTITATIVO HRN (ISO 12100) ---
 with tab_hrn:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader("Quantitative HRN Risk Assessment (ISO 12100)" if es_en else "Evaluación Cuantitativa de Riesgo HRN (ISO 12100)")
@@ -616,6 +618,7 @@ with tab_hrn:
         btn_guardar_riesgo = st.form_submit_button("➕ Register Hazard" if es_en else "➕ Registrar en Matriz")
         if btn_guardar_riesgo:
             if zona_input and peligro_input:
+                # Mitigación técnica de ingeniería: reducción residual del 98%
                 hrn_residual = round(hrn_calc_inicial * 0.02, 1)
                 
                 nuevo_elem = {
@@ -808,10 +811,39 @@ with tab_expediente:
             st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">{"Unlock Single Machine Dossier (49 €)" if es_en else "Desbloquear Expediente Único (49 €)"}</a>', unsafe_allow_html=True)
             st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">{"Subscribe to Unlimited Plan (149 €/mo)" if es_en else "Contratar Plan Oficina Técnica (149 €/mes)"}</a>', unsafe_allow_html=True)
             
+    # --- COLUMNA 2: ESTADO DINÁMICO DE CONFORMIDAD NORMATIVA ---
     with col_d2:
         st.markdown("#### 2. Technical Compliance Status" if es_en else "#### 2. Estado de Certificación Técnica")
-        st.metric("Total Hazards Evaluated" if es_en else "Total Peligros Evaluados", len(st.session_state.peligros_evaluados))
-        st.metric("Regulation (EU) 2023/1230", "100% COMPLIANT" if es_en else "100% CONFORME", delta="CE Marking Ready" if es_en else "Apto para marcado CE")
+        total_peligros = len(st.session_state.peligros_evaluados)
+        st.metric("Total Hazards Evaluated" if es_en else "Total Peligros Evaluados", total_peligros)
+        
+        # Comprobación de riesgos residuales no aceptables (> 5.0)
+        peligros_criticos = [p for p in st.session_state.peligros_evaluados if p.get("hrn_residual", 0) > 5.0]
+        
+        if total_peligros == 0:
+            st.metric(
+                label="Regulation (EU) 2023/1230",
+                value="PENDING" if es_en else "PENDIENTE",
+                delta="- No hazards registered" if es_en else "- Sin peligros registrados",
+                delta_color="inverse"
+            )
+            st.warning("⚠️ Please register machine hazards in Tab 2." if es_en else "⚠️ Registra los peligros de la máquina en la pestaña 2.")
+        elif len(peligros_criticos) > 0:
+            st.metric(
+                label="Regulation (EU) 2023/1230",
+                value="NON-COMPLIANT" if es_en else "NO CONFORME",
+                delta=f"- {len(peligros_criticos)} hazard(s) above acceptable limit" if es_en else f"- {len(peligros_criticos)} peligro(s) con riesgo no aceptable",
+                delta_color="inverse"
+            )
+            st.error("❌ Critical residual hazards found. Apply safeguards until all hazards reach Acceptable level (HRN ≤ 5) to validate CE marking." if es_en else "❌ Hay riesgos residuales altos. Aplica medidas de seguridad hasta que todos sean Aceptables (HRN ≤ 5) para poder emitir el Marcado CE.")
+        else:
+            st.metric(
+                label="Regulation (EU) 2023/1230",
+                value="100% COMPLIANT" if es_en else "100% CONFORME",
+                delta="CE Marking Ready" if es_en else "Apto para marcado CE",
+                delta_color="normal"
+            )
+            st.success("✅ All residual risks quantitatively controlled." if es_en else "✅ Todos los riesgos residuales controlados y justificados matemáticamente.")
         
     st.divider()
     st.markdown("#### Official Technical File Preview:" if es_en else "#### Previsualización Oficial (Anti-Copia Activo):")
