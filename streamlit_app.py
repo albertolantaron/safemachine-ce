@@ -41,9 +41,6 @@ T_HEADER_BADGE = "SOFTWARE PROFESIONAL DE INGENIERÍA LEGAL" if es_espanol else 
 # --- ESTILOS VISUALES INDUSTRIAL TECH ---
 st.markdown(
     """
-    <!-- Etiqueta de verificación de Google Search Console -->
-    <meta name="google-site-verification" content="1J5hlrqoLk1_n8lx_5QZg-1yE4SxUzTXQknOJsH7R7g" />
-    
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
@@ -169,46 +166,77 @@ def calcular_plr(severidad, frecuencia, posibilidad):
         else:
             return "PL d" if "P1" in posibilidad else "PL e (Max. Safety)"
 
-# --- GESTIÓN DE SESIÓN Y LICENCIAS ---
+# --- INICIALIZACIÓN DE ESTADO ---
 if "tipo_licencia" not in st.session_state:
     st.session_state.tipo_licencia = "ninguna"
 if "cliente_email" not in st.session_state:
     st.session_state.cliente_email = ""
+if "customer_id" not in st.session_state:
+    st.session_state.customer_id = ""
+if "serie_vinculada" not in st.session_state:
+    st.session_state.serie_vinculada = ""
 
+# --- COMPROBACIÓN INTELIGENTE DE LICENCIA EN STRIPE ---
 def comprobar_licencia_en_stripe(email_a_verificar):
     email_limpio = email_a_verificar.strip().lower()
     if email_limpio in [e.lower() for e in ADMIN_EMAILS]:
-        return True, "ilimitada", "Licencia Propietario / Master"
+        return True, "ilimitada", "Licencia Propietario / Master", "", ""
     if not stripe or not stripe_key:
-        return False, "ninguna", "Sistema de verificación no conectado a Stripe."
+        return False, "ninguna", "Sistema de verificación no conectado a Stripe.", "", ""
 
     try:
         clientes = stripe.Customer.list(email=email_limpio)
         if not clientes.data:
-            return False, "ninguna", "Correo no encontrado en la base de datos de Stripe."
+            return False, "ninguna", "Correo no encontrado en la base de datos de Stripe.", "", ""
 
-        customer_id = clientes.data[0].id
+        cust = clientes.data[0]
+        customer_id = cust.id
+        
+        # 1. Comprobar si tiene suscripción activa (Oficina Técnica)
         subs = stripe.Subscription.list(customer=customer_id, status="active")
         if subs.data:
-            return True, "ilimitada", "Suscripción Oficina Técnica Activa (149€/mes)"
+            return True, "ilimitada", "Suscripción Oficina Técnica Activa (149€/mes)", customer_id, ""
 
+        # 2. Comprobar si pagó un expediente individual (49€)
         cargos = stripe.Charge.list(customer=customer_id, limit=5)
         for cargo in cargos.data:
             if cargo.paid and not cargo.refunded:
-                return True, "individual", "Licencia Expediente Individual Activa (49€)"
+                # Comprobamos si este cliente ya vinculó su expediente a un número de serie
+                serie_existente = cust.metadata.get("serie_vinculada", "")
+                return True, "individual", "Licencia Expediente Individual (49€)", customer_id, serie_existente
 
-        return False, "ninguna", "No constan pagos vigentes asociados a este correo."
+        return False, "ninguna", "No constan pagos vigentes asociados a este correo.", "", ""
     except Exception as err:
-        return False, "ninguna", f"Error de verificación: {err}"
+        return False, "ninguna", f"Error de verificación: {err}", "", ""
 
-# Detección retorno Stripe
-if st.query_params.get("pago_exitoso") == "true":
-    st.session_state.tipo_licencia = "individual"
-    st.session_state.cliente_email = st.query_params.get("email", "Licencia Empresa Verificada")
-    st.balloons()
-    st.toast("🎉 ¡Pago verificado con éxito! Expediente oficial desbloqueado.", icon="💎")
+# --- RETORNO SEGURO TRAS EL PAGO DE STRIPE ---
+session_id = st.query_params.get("session_id")
+if session_id and stripe and stripe_key:
+    try:
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        if checkout_session.payment_status == "paid":
+            email_comprador = checkout_session.customer_details.email.strip().lower()
+            monto_pagado = checkout_session.amount_total or 0
 
-# Riesgos iniciales
+            # Determinamos tipo según plan pagado
+            if checkout_session.mode == "subscription" or monto_pagado >= 14000:
+                st.session_state.tipo_licencia = "ilimitada"
+            else:
+                st.session_state.tipo_licencia = "individual"
+                
+            st.session_state.cliente_email = email_comprador
+            st.session_state.customer_id = checkout_session.customer or ""
+            
+            # Limpiamos URL
+            st.query_params.clear()
+            st.balloons()
+            st.toast(f"🎉 ¡Pago de {email_comprador} verificado con éxito!", icon="💎")
+        else:
+            st.error("El pago no se ha completado correctamente.")
+    except Exception as e:
+        st.error(f"Error de validación con Stripe: {e}")
+
+# Peligros iniciales precargados
 if "peligros_evaluados" not in st.session_state:
     st.session_state.peligros_evaluados = [
         {
@@ -240,13 +268,12 @@ if "peligros_evaluados" not in st.session_state:
     ]
 
 # --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL CON BLUR ANTI-COPIA ---
-def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False):
+def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False, bloqueado_por_serie=False):
     fecha_hoy = datetime.date.today().strftime("%d of %B %Y" if en_ingles else "%d de %B de %Y")
-    es_valido = tipo_licencia in ["individual", "ilimitada"]
+    es_valido = (tipo_licencia in ["individual", "ilimitada"]) and not bloqueado_por_serie
     
     filas_tabla = ""
     for idx, r in enumerate(lista_riesgos):
-        # Si no es de pago, difuminamos a partir del segundo riesgo para evitar capturas
         blur_style = "" if (es_valido or idx == 0) else "filter: blur(5px); user-select: none; opacity: 0.6;"
         filas_tabla += f"""
         <tr style="{blur_style}">
@@ -262,9 +289,9 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
     bloque_bloqueo = "" if es_valido else f"""
     <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 20px; text-align: center; border-radius: 8px; margin: 25px 0;">
         <span style="font-size: 24pt;">🔒</span>
-        <h3 style="color: #9f1239; margin: 8px 0;">{'SECCIONES LEGALES BLOQUEADAS (MODO EVALUACIÓN)' if not en_ingles else 'LEGAL SECTIONS LOCKED (EVALUATION MODE)'}</h3>
+        <h3 style="color: #9f1239; margin: 8px 0;">{'SECCIONES LEGALES BLOQUEADAS' if not en_ingles else 'LEGAL SECTIONS LOCKED'}</h3>
         <p style="color: #4c0519; font-size: 10pt; max-width: 600px; margin: 0 auto;">
-            {'Para descargar el Expediente de Construcción completo, desbloquear todas las matrices sin desenfoque y obtener la Declaración Oficial visable, adquiere tu licencia (49 € o 149 €/mes).' if not en_ingles else 'To download the full Technical File, unblur all risk assessments, and obtain the officially signable Declaration, purchase a license.'}
+            {'Para descargar este Expediente Oficial, desbloquear todas las matrices y obtener la Declaración visable, adquiere tu licencia o contrata el Plan Oficina Técnica.' if not en_ingles else 'To download this official file, unblur risk assessments, and obtain the signable declaration, purchase a license.'}
         </p>
     </div>
     """
@@ -423,17 +450,20 @@ if st.session_state.tipo_licencia == "ilimitada":
         f"""
         <div style="background:#f0fdf4; border:1px solid #86efac; padding:12px; border-radius:8px; color:#166534; font-weight:bold;">
             🟢 {'PLAN OFICINA TÉCNICA (149€/mes)' if es_espanol else 'ENGINEERING OFFICE PLAN (149€/mo)'}<br>
-            <span style="font-size:11px; font-weight:normal;">{st.session_state.cliente_email}</span>
+            <span style="font-size:11px; font-weight:normal;">{st.session_state.cliente_email}</span><br>
+            <span style="font-size:10px; color:#15803d;">✨ Máquinas Ilimitadas Desbloqueadas</span>
         </div>
         """,
         unsafe_allow_html=True
     )
 elif st.session_state.tipo_licencia == "individual":
+    vinculo_texto = f"S/N: {st.session_state.serie_vinculada}" if st.session_state.serie_vinculada else "Pendiente de vincular"
     st.sidebar.markdown(
         f"""
         <div style="background:#eff6ff; border:1px solid #93c5fd; padding:12px; border-radius:8px; color:#1e40af; font-weight:bold;">
             🔵 {'PLAN EXPEDIENTE INDIVIDUAL (49€)' if es_espanol else 'SINGLE MACHINE LICENSE (49€)'}<br>
-            <span style="font-size:11px; font-weight:normal;">{'1 Expediente Desbloqueado' if es_espanol else '1 Dossier Unlocked'}</span>
+            <span style="font-size:11px; font-weight:normal;">{st.session_state.cliente_email}</span><br>
+            <span style="font-size:10px; color:#1d4ed8;">🔒 Vinculado a 1 Máquina ({vinculo_texto})</span>
         </div>
         """,
         unsafe_allow_html=True
@@ -455,6 +485,8 @@ if st.session_state.tipo_licencia != "ninguna":
     if st.sidebar.button("Cerrar Sesión" if es_espanol else "Logout"):
         st.session_state.tipo_licencia = "ninguna"
         st.session_state.cliente_email = ""
+        st.session_state.customer_id = ""
+        st.session_state.serie_vinculada = ""
         st.rerun()
 else:
     with st.sidebar.form("form_recuperar"):
@@ -462,10 +494,12 @@ else:
         correo_licencia = st.text_input("Email Stripe:")
         if st.form_submit_button("🔑 Validar" if es_espanol else "🔑 Validate"):
             if "@" in correo_licencia:
-                valido, tipo, mensaje = comprobar_licencia_en_stripe(correo_licencia)
+                valido, tipo, mensaje, cust_id, serie_vinc = comprobar_licencia_en_stripe(correo_licencia)
                 if valido:
                     st.session_state.tipo_licencia = tipo
                     st.session_state.cliente_email = correo_licencia.strip().lower()
+                    st.session_state.customer_id = cust_id
+                    st.session_state.serie_vinculada = serie_vinc
                     st.success("¡Licencia validada!" if es_espanol else "License verified!")
                     st.rerun()
                 else:
@@ -516,7 +550,7 @@ with tab_maquina:
         direccion = st.text_input("Dirección de fabricación:" if es_espanol else "Manufacturing Address:", value="Polígono Industrial Erletxes, Manzana 4, 48960 Galdakao")
     with col2:
         modelo = st.text_input("Modelo / Código:" if es_espanol else "Model / Ref Code:", value="ROBOPACK-2025")
-        serie = st.text_input("Número de Serie:" if es_espanol else "Serial Number:", value="SN-2025-0842")
+        serie = st.text_input("Número de Serie (S/N):" if es_espanol else "Serial Number (S/N):", value="SN-2025-0842")
         anio = st.number_input("Año de Fabricación:" if es_espanol else "Year of Manufacture:", min_value=2020, max_value=2030, value=2025)
         ingeniero = st.text_input("Ingeniero Responsable:" if es_espanol else "Chartered Technical Engineer:", value="Alberto Lantarón")
         colegiado = st.text_input("Nº Colegiado / DNI:" if es_espanol else "Professional ID / License:", value="COIIB-48192")
@@ -647,11 +681,20 @@ with tab_placa:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PESTAÑA 5: EXPEDIENTE OFICIAL Y DESCARGA ---
+# --- PESTAÑA 5: EXPEDIENTE OFICIAL Y CONTROL DE VINCULACIÓN ---
 with tab_expediente:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader("Expediente Técnico Completo y Marcado CE" if es_espanol else "Technical Construction File & CE Marking")
     
+    # Comprobación de vinculación para licencias individuales (49€)
+    serie_actual = serie.strip().upper()
+    bloqueado_por_serie = False
+    
+    if st.session_state.tipo_licencia == "individual":
+        if st.session_state.serie_vinculada:
+            if serie_actual != st.session_state.serie_vinculada.strip().upper():
+                bloqueado_por_serie = True
+
     datos_completos = {
         "denominacion": denominacion,
         "fabricante": fabricante,
@@ -669,20 +712,55 @@ with tab_expediente:
         "presion": presion
     }
 
-    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados, st.session_state.tipo_licencia, en_ingles=(not es_espanol))
+    html_dossier = generar_html_expediente(datos_completos, st.session_state.peligros_evaluados, st.session_state.tipo_licencia, en_ingles=(not es_espanol), bloqueado_por_serie=bloqueado_por_serie)
     
     col_d1, col_d2 = st.columns([1, 1])
     with col_d1:
         st.markdown("#### 1. Descarga del Documento Legal" if es_espanol else "#### 1. Official Document Download")
-        if st.session_state.tipo_licencia in ["individual", "ilimitada"]:
+        
+        # Caso 1: Licencia Ilimitada (149€/mes) o Master Admin
+        if st.session_state.tipo_licencia == "ilimitada":
             st.download_button(
                 label="📥 Descargar Expediente Oficial (PDF)" if es_espanol else "📥 Download Official File (PDF)",
                 data=html_dossier,
-                file_name=f"Expediente_CE_{modelo}.html",
+                file_name=f"Expediente_CE_{modelo}_{serie}.html",
                 mime="text/html",
                 type="primary"
             )
-            st.caption("Abre el archivo descargado en tu navegador y pulsa 'Guardar como PDF' para obtener el documento oficial limpio sin marcas de agua.")
+            st.success("Plan Oficina Técnica: Descargas y máquinas ilimitadas.")
+
+        # Caso 2: Licencia Individual (49€) - Control de máquina única
+        elif st.session_state.tipo_licencia == "individual":
+            if bloqueado_por_serie:
+                st.error(f"⚠️ Esta licencia de 49 € ya fue consumida y vinculada a la máquina con **S/N: {st.session_state.serie_vinculada}**.")
+                st.info("Para certificar una nueva máquina diferente, adquiere otro Expediente Único (49 €) o suscríbete al Plan Oficina Técnica Ilimitada (149 €/mes).")
+                st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-right:8px;">Nuevo Expediente (49 €)</a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block;">Plan Ilimitado (149 €/mes)</a>', unsafe_allow_html=True)
+            else:
+                descarga_click = st.download_button(
+                    label="📥 Descargar y Vincular a esta Máquina (PDF)",
+                    data=html_dossier,
+                    file_name=f"Expediente_CE_{modelo}_{serie}.html",
+                    mime="text/html",
+                    type="primary"
+                )
+                if descarga_click:
+                    # Vinculamos esta licencia de por vida al S/N de esta máquina
+                    if not st.session_state.serie_vinculada:
+                        st.session_state.serie_vinculada = serie_actual
+                        if stripe and stripe_key and st.session_state.customer_id:
+                            try:
+                                stripe.Customer.modify(
+                                    st.session_state.customer_id,
+                                    metadata={"serie_vinculada": serie_actual, "modelo": modelo}
+                                )
+                            except Exception:
+                                pass
+                        st.rerun()
+
+                st.caption(f"🔒 Al descargar, tu licencia quedará vinculada exclusivamente a la máquina con número de serie: **{serie}**.")
+
+        # Caso 3: Modo Evaluación sin pagar
         else:
             st.warning("🔒 Expediente oficial visable protegido tras licencia." if es_espanol else "🔒 Full official file protected behind license.")
             st.markdown(f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7; color:white; padding:12px 20px; border-radius:6px; font-weight:bold; text-decoration:none; display:inline-block; margin-bottom:8px;">Desbloquear Expediente Único (49 €)</a>', unsafe_allow_html=True)
