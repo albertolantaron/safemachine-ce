@@ -266,7 +266,7 @@ if "peligros_evaluados" not in st.session_state:
         }
     ]
 
-# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL 100% BILINGÜE ---
+# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL 100% BILINGÜE CON PROTECCIÓN ANTI-COPIA ---
 def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False, bloqueado_por_serie=False):
     fecha_hoy = datetime.date.today().strftime("%B %d, %Y" if en_ingles else "%d de %B de %Y")
     es_valido = (tipo_licencia in ["individual", "ilimitada"]) and not bloqueado_por_serie
@@ -304,6 +304,8 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
     """
 
     blur_declaracion = "" if es_valido else "filter: blur(6px); user-select: none; pointer-events: none;"
+    # Protección anti-captura de la placa en la sección 3 del PDF
+    blur_placa_pdf = "" if es_valido else "filter: blur(5px); user-select: none; pointer-events: none; opacity: 0.65;"
 
     t_doc = "TECHNICAL CONSTRUCTION FILE" if en_ingles else "EXPEDIENTE TÉCNICO DE CONSTRUCCIÓN"
     t_reg = "Pursuant to European Machinery Regulation (EU) 2023/1230" if en_ingles else "Conforme al Reglamento Europeo de Máquinas (UE) 2023/1230"
@@ -410,9 +412,11 @@ def generar_html_expediente(datos, lista_riesgos, tipo_licencia, en_ingles=False
             <p style="margin:2px 0; font-size:10pt; font-weight:bold;">{datos['fabricante']}</p>
             <p style="margin:2px 0; font-size:8pt;">{datos['direccion']}</p>
             <hr style="margin:6px 0;">
-            <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>TYPE / MOD:</strong> {datos['modelo']}</p>
-            <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>S/N:</strong> {datos['serie']} &nbsp;|&nbsp; <strong>YEAR:</strong> {datos['anio']}</p>
-            <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>POWER:</strong> {datos['potencia']} kW &nbsp;|&nbsp; <strong>VOLTAGE:</strong> {datos['tension']} V</p>
+            <div style="{blur_placa_pdf}">
+                <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>TYPE / MOD:</strong> {datos['modelo']}</p>
+                <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>S/N:</strong> {datos['serie']} &nbsp;|&nbsp; <strong>YEAR:</strong> {datos['anio']}</p>
+                <p style="margin:2px 0; font-size:8.5pt; text-align:left;"><strong>POWER:</strong> {datos['potencia']} kW &nbsp;|&nbsp; <strong>VOLTAGE:</strong> {datos['tension']} V</p>
+            </div>
         </div>
 
         <h2 style="margin-top:35px;">{t_sec4}</h2>
@@ -677,7 +681,6 @@ with tab_placa:
     st.subheader("Metallic CE Nameplate Simulator (Art. 16 & Annex III)" if es_en else "Simulador de Placa CE Físico (Art. 16 y Anexo III)")
     st.write("Visual preview of the indelible plate that must be physically riveted to the machine frame:" if es_en else "Vista previa de la placa indeleble que debe remacharse al chasis de la máquina:")
     
-    # Verificación de licencia
     serie_check = serie.strip().upper()
     bloqueado_placa = False
     if st.session_state.tipo_licencia == "individual" and st.session_state.serie_vinculada:
@@ -686,10 +689,8 @@ with tab_placa:
             
     es_licencia_activa = (st.session_state.tipo_licencia in ["individual", "ilimitada"]) and not bloqueado_placa
 
-    # La mitad inferior con los datos se desenfoca si no ha pagado
     blur_datos = "" if es_licencia_activa else "filter: blur(5px); user-select: none; pointer-events: none; opacity: 0.65;"
 
-    # Dibujado directo en HTML sin espacios a la izquierda para evitar el fallo de Streamlit
     placa_html = f"""<div class="placa-metalica">
 <div class="placa-remache" style="top:8px; left:8px;"></div>
 <div class="placa-remache" style="top:8px; right:8px;"></div>
