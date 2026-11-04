@@ -78,9 +78,9 @@ st.markdown(
     .header-box {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border-radius: 14px;
-        padding: 24px;
+        padding: 28px;
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
     }
     .header-badge {
@@ -380,7 +380,7 @@ def comprobar_licencia_en_stripe(email_a_verificar):
         return False, "ninguna", f"Verification Error: {err}", "", ""
 
 
-# --- RETORNO SEGURO TRAS EL PAGO DE STRIPE (VALIDACIÓN) ---
+# --- RETORNO SEGURO TRAS EL PAGO DE STRIPE (VALIDACIÓN CRIPTOGRÁFICA) ---
 session_id = st.query_params.get("session_id")
 if session_id and stripe and stripe_key:
     try:
@@ -459,7 +459,7 @@ if "peligros_evaluados" not in st.session_state:
     ]
 
 
-# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL MODULAR Y ESCALABLE ---
+# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL 100% BILINGÜE CON FLUJO CONTINUO ---
 def generar_html_expediente(
     datos,
     lista_riesgos,
@@ -514,7 +514,7 @@ def generar_html_expediente(
         ""
         if es_valido
         else f"""
-    <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 18px; text-align: center; border-radius: 8px; margin: 20px 0;">
+    <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 18px; text-align: center; border-radius: 8px; margin: 20px 0; page-break-inside: avoid;">
         <span style="font-size: 22pt;">🔒</span>
         <h3 style="color: #9f1239; margin: 6px 0;">{'LEGAL AND COMPLIANCE SECTIONS LOCKED' if en_ingles else 'SECCIONES LEGALES BLOQUEADAS (MODO EVALUACIÓN)'}</h3>
         <p style="color: #4c0519; font-size: 9.5pt; max-width: 600px; margin: 0 auto;">
@@ -586,11 +586,11 @@ def generar_html_expediente(
             @media print {{
                 .no-print {{ display: none !important; }}
                 body {{ font-size: 9pt; color: #111827; }}
-                .page-break {{ page-break-before: always !important; break-before: always !important; }}
                 @page {{ margin: 12mm 15mm; size: A4 portrait; }}
                 tr {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
                 thead {{ display: table-header-group; }}
                 table {{ page-break-inside: auto; }}
+                h2, .placa-box, .seccion-firmas {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
             }}
             body {{
                 font-family: Arial, Helvetica, sans-serif;
@@ -609,7 +609,7 @@ def generar_html_expediente(
                 margin: 0;
             }}
             h1 {{ font-size: 15pt; text-align: center; margin: 4px 0; color: #0f172a; }}
-            h2 {{ font-size: 11pt; border-bottom: 2px solid #0284c7; padding-bottom: 3px; margin-top: 15px; margin-bottom: 8px; color: #0f172a; }}
+            h2 {{ font-size: 11pt; border-bottom: 2px solid #0284c7; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; color: #0f172a; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8.5pt; }}
             th {{ background: #f1f5f9; padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; }}
             td {{ padding: 6px 8px; border: 1px solid #cbd5e1; }}
@@ -629,7 +629,7 @@ def generar_html_expediente(
             <p style="font-size:11px; color:#64748b; margin-top:5px;">{'Select: Destination -> Save as PDF in your print dialog.' if en_ingles else 'En la ventana de impresión selecciona: Guardar como PDF.'}</p>
         </div>
 
-        <!-- HOJA 1: PORTADA Y ESPECIFICACIONES -->
+        <!-- ENCABEZADO Y PORTADA -->
         <div style="border: 1px solid #000; padding: 12px 20px; text-align: center; margin-bottom: 15px;">
             <div class="ce-mark">CE</div>
             <h1>{t_doc}</h1>
@@ -641,6 +641,7 @@ def generar_html_expediente(
             <p style="font-size:8.5pt; color:#64748b; margin:3px 0;"><strong>{'DATE OF ISSUE' if en_ingles else 'FECHA DE EMISIÓN'}:</strong> {fecha_hoy}</p>
         </div>
 
+        <!-- SECCIÓN 1: ESPECIFICACIONES TÉCNICAS -->
         <h2>{t_sec1}</h2>
         <table>
             <tr><th width="30%">{'Manufacturer / Legal Entity' if en_ingles else 'Fabricante'}:</th><td width="70%">{datos['fabricante']} ({datos['cif']})</td></tr>
@@ -652,9 +653,7 @@ def generar_html_expediente(
             <tr><th>{'Year of Construction' if en_ingles else 'Año de Construcción'}:</th><td>{datos['anio']}</td></tr>
         </table>
 
-        <!-- SALTO LIMPIO A LA MATRIZ DE RIESGOS (PÁGINA 2 EN ADELANTE) -->
-        <div class="page-break"></div>
-
+        <!-- SECCIÓN 2: EVALUACIÓN Y REDUCCIÓN DE RIESGOS (FLUJO CONTINUO) -->
         <h2>{t_sec2}</h2>
         <table>
             <thead>
@@ -674,9 +673,7 @@ def generar_html_expediente(
 
         {bloque_bloqueo}
 
-        <!-- SALTO LIMPIO A LA HOJA LEGAL DE FIRMAS (ÚLTIMA PÁGINA) -->
-        <div class="page-break"></div>
-
+        <!-- SECCIÓN 3: PLACA CE METÁLICA -->
         <h2>{t_sec3}</h2>
         <div class="placa-box">
             <div style="font-size:22pt; font-weight:bold; letter-spacing:-2px;">CE</div>
@@ -690,21 +687,24 @@ def generar_html_expediente(
             </div>
         </div>
 
-        <h2 style="margin-top:25px;">{t_sec4}</h2>
-        <div style="{blur_declaracion}">
-            <p style="font-size:8.5pt; text-align:justify; margin-bottom:12px;">
-                {'The undersigned declares on behalf of the manufacturer, under sole responsibility, that the machinery described herein fulfills all relevant Essential Health and Safety Requirements laid down in Regulation (EU) 2023/1230 of the European Parliament and of the Council on machinery, as well as Directive 2014/30/EU (EMC) and Directive 2014/35/EU (Low Voltage).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
-            </p>
-            <p style="font-size:8.5pt;"><strong>{'Authorized Person to compile the Technical Dossier' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (ID: {datos['colegiado']}).</p>
-            
-            <div style="margin-top:40px; display:flex; justify-content:space-between;">
-                <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
-                    <strong>{'Authorized Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
-                    <span style="color:#64748b; font-size:7.5pt;">{datos['fabricante']}</span>
-                </div>
-                <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
-                    <strong>{'Chartered Industrial Engineer' if en_ingles else 'Firma Ingeniero Industrial'}</strong><br>
-                    <span style="color:#64748b; font-size:7.5pt;">{datos['ingeniero']} (ID: {datos['colegiado']})</span>
+        <!-- SECCIÓN 4: DECLARACIÓN UE DE CONFORMIDAD -->
+        <div class="seccion-firmas">
+            <h2 style="margin-top:20px;">{t_sec4}</h2>
+            <div style="{blur_declaracion}">
+                <p style="font-size:8.5pt; text-align:justify; margin-bottom:12px;">
+                    {'The undersigned declares on behalf of the manufacturer, under sole responsibility, that the machinery described herein fulfills all relevant Essential Health and Safety Requirements laid down in Regulation (EU) 2023/1230 of the European Parliament and of the Council on machinery, as well as Directive 2014/30/EU (EMC) and Directive 2014/35/EU (Low Voltage).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
+                </p>
+                <p style="font-size:8.5pt;"><strong>{'Authorized Person to compile the Technical Dossier' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (ID: {datos['colegiado']}).</p>
+                
+                <div style="margin-top:35px; display:flex; justify-content:space-between;">
+                    <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
+                        <strong>{'Authorized Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
+                        <span style="color:#64748b; font-size:7.5pt;">{datos['fabricante']}</span>
+                    </div>
+                    <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
+                        <strong>{'Chartered Industrial Engineer' if en_ingles else 'Firma Ingeniero Industrial'}</strong><br>
+                        <span style="color:#64748b; font-size:7.5pt;">{datos['ingeniero']} (ID: {datos['colegiado']})</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -768,20 +768,28 @@ else:
         """,
         unsafe_allow_html=True,
     )
+
+    lbl_side_49 = (
+        "📄 Single Dossier (49 €)" if es_en else "📄 Expediente Único (49 €)"
+    )
+    lbl_side_149 = (
+        "🏢 Unlimited Engineering Office (149 €/mo)"
+        if es_en
+        else "🏢 Oficina Técnica Ilimitada (149 €/mes)"
+    )
+
     st.sidebar.markdown(
         f'<a href="{URL_STRIPE_49}" target="_blank" style="background:#0284c7;'
         " color:white; display:block; text-align:center; padding:9px;"
         " border-radius:6px; font-weight:bold; font-size:12px;"
-        ' text-decoration:none; margin-bottom:6px;">📄 {"Single Dossier (49'
-        ' €)" if es_en else "Expediente Único (49 €)"}</a>',
+        f' text-decoration:none; margin-bottom:6px;">{lbl_side_49}</a>',
         unsafe_allow_html=True,
     )
     st.sidebar.markdown(
         f'<a href="{URL_STRIPE_149}" target="_blank" style="background:#0f172a;'
         " color:white; display:block; text-align:center; padding:9px;"
         " border-radius:6px; font-weight:bold; font-size:12px;"
-        ' text-decoration:none;">🏢 {"Unlimited Engineering Office (149'
-        ' €/mo)" if es_en else "Oficina Técnica Ilimitada (149 €/mes)"}</a>',
+        f' text-decoration:none;">{lbl_side_149}</a>',
         unsafe_allow_html=True,
     )
 
@@ -1094,7 +1102,6 @@ with tab_hrn:
                     "medida_en": medida_input,
                     "hrn_residual": hrn_residual,
                 }
-                # Admite peligros ilimitados en la lista dinámica
                 st.session_state.peligros_evaluados.append(nuevo_elem)
                 st.success(
                     "Registered in Technical Dossier."
@@ -1216,7 +1223,7 @@ with tab_plr:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PESTAÑA 4: PLACA CE METÁLICA ---
+# --- PESTAÑA 4: PLACA CE METÁLICA (MITAD NÍTIDA, MITAD DESENFOCADA SI NO PAGA) ---
 with tab_placa:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader(
@@ -1246,6 +1253,7 @@ with tab_placa:
     es_licencia_activa = (
         st.session_state.tipo_licencia in ["individual", "ilimitada"]
     ) and not bloqueado_placa
+
     blur_datos = (
         ""
         if es_licencia_activa
@@ -1297,7 +1305,7 @@ with tab_placa:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PESTAÑA 5: EXPEDIENTE OFICIAL Y DESCARGA ---
+# --- PESTAÑA 5: EXPEDIENTE OFICIAL Y CONTROL DE VINCULACIÓN ---
 with tab_expediente:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader(
@@ -1384,22 +1392,29 @@ with tab_expediente:
                         " Oficina Técnica Ilimitada (149 €/mes)."
                     )
                 )
+
+                txt_nuevo_49 = (
+                    "New Dossier (49 €)" if es_en else "Nuevo Expediente (49 €)"
+                )
+                txt_plan_149 = (
+                    "Unlimited Plan (149 €/mo)"
+                    if es_en
+                    else "Plan Ilimitado (149 €/mes)"
+                )
+
                 st.markdown(
                     f'<a href="{URL_STRIPE_49}" target="_blank"'
                     ' style="background:#0284c7; color:white; padding:10px'
                     " 16px; border-radius:6px; font-weight:bold;"
                     " text-decoration:none; display:inline-block;"
-                    ' margin-right:8px;">{"New Dossier (49 €)" if es_en else'
-                    ' "Nuevo Expediente (49 €)"}</a>',
+                    f' margin-right:8px;">{txt_nuevo_49}</a>',
                     unsafe_allow_html=True,
                 )
                 st.markdown(
                     f'<a href="{URL_STRIPE_149}" target="_blank"'
                     ' style="background:#0f172a; color:white; padding:10px'
                     " 16px; border-radius:6px; font-weight:bold;"
-                    ' text-decoration:none; display:inline-block;">{"Unlimited'
-                    ' Plan (149 €/mo)" if es_en else "Plan Ilimitado (149'
-                    ' €/mes)"}</a>',
+                    f' text-decoration:none; display:inline-block;">{txt_plan_149}</a>',
                     unsafe_allow_html=True,
                 )
             else:
@@ -1445,22 +1460,30 @@ with tab_expediente:
                 if es_en
                 else "🔒 Expediente oficial visable protegido tras licencia."
             )
+
+            txt_desbloquear = (
+                "Unlock Single Machine Dossier (49 €)"
+                if es_en
+                else "Desbloquear Expediente Único (49 €)"
+            )
+            txt_contratar = (
+                "Subscribe to Unlimited Plan (149 €/mo)"
+                if es_en
+                else "Contratar Plan Oficina Técnica (149 €/mes)"
+            )
+
             st.markdown(
                 f'<a href="{URL_STRIPE_49}" target="_blank"'
                 ' style="background:#0284c7; color:white; padding:12px 20px;'
                 " border-radius:6px; font-weight:bold; text-decoration:none;"
-                ' display:inline-block; margin-bottom:8px;">{"Unlock Single'
-                ' Machine Dossier (49 €)" if es_en else "Desbloquear Expediente'
-                ' Único (49 €)"}</a>',
+                f' display:inline-block; margin-bottom:8px;">{txt_desbloquear}</a>',
                 unsafe_allow_html=True,
             )
             st.markdown(
                 f'<a href="{URL_STRIPE_149}" target="_blank"'
                 ' style="background:#0f172a; color:white; padding:12px 20px;'
                 " border-radius:6px; font-weight:bold; text-decoration:none;"
-                ' display:inline-block;">{"Subscribe to Unlimited Plan (149'
-                ' €/mo)" if es_en else "Contratar Plan Oficina Técnica (149'
-                ' €/mes)"}</a>',
+                f' display:inline-block;">{txt_contratar}</a>',
                 unsafe_allow_html=True,
             )
 
