@@ -409,7 +409,7 @@ if session_id and stripe and stripe_key:
     except Exception as e:
         st.error(f"Error: {e}")
 
-# --- PELIGROS INICIALES PRECARGADOS (CASO REAL EXACTO DEL GUION) ---
+# --- PELIGROS INICIALES PRECARGADOS (CASO REAL EXACTO) ---
 if "peligros_evaluados" not in st.session_state or len(st.session_state.peligros_evaluados) == 0:
     st.session_state.peligros_evaluados = [
         {
@@ -439,7 +439,7 @@ if "peligros_evaluados" not in st.session_state or len(st.session_state.peligros
     ]
 
 
-# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL 100% BILINGÜE ---
+# --- MAQUETADOR DE EXPEDIENTE TÉCNICO OFICIAL DE 2 PÁGINAS PERFECTAS ---
 def generar_html_expediente(
     datos,
     lista_riesgos,
@@ -478,12 +478,12 @@ def generar_html_expediente(
 
             filas_tabla += f"""
             <tr style="{blur_style}">
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;"><strong>{zona_texto}</strong><br><span style="color:#64748b; font-size:8pt;">{peligro_texto}</span></td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1; font-size:8.5pt;">{r.get('norma', 'EN ISO 12100')}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1; text-align:center; color:{color_ini}; font-weight:bold;">HRN: {h_ini:.1f}<br><span style="font-size:7pt;">{estado_ini}</span></td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; color:#0284c7;">{plr_txt}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1; font-size:8.5pt;">{medida_texto}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1; text-align:center; color:{color_res}; font-weight:bold;">HRN: {h_res:.1f}<br><span style="font-size:7pt;">{estado_res}</span></td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1;"><strong>{zona_texto}</strong><br><span style="color:#64748b; font-size:7.5pt;">{peligro_texto}</span></td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1; font-size:8pt;">{r.get('norma', 'EN ISO 12100')}</td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1; text-align:center; color:{color_ini}; font-weight:bold; font-size:8pt;">HRN: {h_ini:.1f}<br><span style="font-size:6.5pt;">{estado_ini}</span></td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; color:#0284c7; font-size:8.5pt;">{plr_txt}</td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1; font-size:8pt;">{medida_texto}</td>
+                <td style="padding:5px 8px; border:1px solid #cbd5e1; text-align:center; color:{color_res}; font-weight:bold; font-size:8pt;">HRN: {h_res:.1f}<br><span style="font-size:6.5pt;">{estado_res}</span></td>
             </tr>
             """
 
@@ -491,11 +491,11 @@ def generar_html_expediente(
         ""
         if es_valido
         else f"""
-    <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 18px; text-align: center; border-radius: 8px; margin: 20px 0; page-break-inside: avoid;">
-        <span style="font-size: 22pt;">🔒</span>
-        <h3 style="color: #9f1239; margin: 6px 0;">{'LEGAL AND COMPLIANCE SECTIONS LOCKED' if en_ingles else 'SECCIONES LEGALES BLOQUEADAS (MODO EVALUACIÓN)'}</h3>
-        <p style="color: #4c0519; font-size: 9.5pt; max-width: 600px; margin: 0 auto;">
-            {'To download the unblurred Technical Construction File, unlock the full quantitative risk assessment and obtain the signable EU Declaration of Conformity, please purchase a license (49 € Single Dossier or 149 €/mo Unlimited Plan).' if en_ingles else 'Para descargar el Expediente de Construcción completo, desbloquear todas las matrices sin desenfoque y obtener la Declaración Oficial visable, adquiere tu licencia (49 € o 149 €/mes).'}
+    <div style="background: #fff1f2; border: 2px dashed #e11d48; padding: 14px; text-align: center; border-radius: 8px; margin: 15px 0;">
+        <span style="font-size: 18pt;">🔒</span>
+        <h3 style="color: #9f1239; margin: 4px 0; font-size: 10pt;">{'LEGAL AND COMPLIANCE SECTIONS LOCKED' if en_ingles else 'SECCIONES LEGALES BLOQUEADAS (MODO EVALUACIÓN)'}</h3>
+        <p style="color: #4c0519; font-size: 8.5pt; max-width: 600px; margin: 0 auto;">
+            {'To download the unblurred Technical Construction File, unlock the full quantitative risk assessment and obtain the signable EU Declaration of Conformity, please purchase a license (49 € Single Dossier or 149 €/mo Unlimited Plan).' if en_ingles else 'Para descargar el Expediente completo sin desenfoque y obtener la Declaración Oficial visable, adquiere tu licencia (49 € o 149 €/mes).'}
         </p>
     </div>
     """
@@ -558,133 +558,150 @@ def generar_html_expediente(
         <style>
             @media print {{
                 .no-print {{ display: none !important; }}
-                body {{ font-size: 9pt; color: #111827; }}
-                @page {{ margin: 12mm 15mm; size: A4 portrait; }}
+                body {{ font-size: 8.8pt; color: #111827; margin: 0; padding: 0; }}
+                @page {{ margin: 10mm 14mm; size: A4 portrait; }}
+                .salto-pagina-oficial {{ page-break-before: always !important; break-before: always !important; }}
+                .pagina-dos-flex {{
+                    min-height: 255mm !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    justify-content: space-between !important;
+                }}
                 tr {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
                 thead {{ display: table-header-group; }}
                 table {{ page-break-inside: auto; }}
-                h2, .placa-box, .seccion-firmas {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
             }}
             body {{
                 font-family: Arial, Helvetica, sans-serif;
                 max-width: 850px;
-                margin: 10px auto;
-                padding: 15px;
+                margin: 5px auto;
+                padding: 12px;
                 color: #1e293b;
-                line-height: 1.35;
-                position: relative;
+                line-height: 1.3;
             }}
             .ce-mark {{
-                font-size: 38pt;
+                font-size: 34pt;
                 font-weight: 900;
                 letter-spacing: -3px;
                 text-align: center;
                 margin: 0;
             }}
-            h1 {{ font-size: 15pt; text-align: center; margin: 4px 0; color: #0f172a; }}
-            h2 {{ font-size: 11pt; border-bottom: 2px solid #0284c7; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; color: #0f172a; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8.5pt; }}
-            th {{ background: #f1f5f9; padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; }}
-            td {{ padding: 6px 8px; border: 1px solid #cbd5e1; }}
+            h1 {{ font-size: 14pt; text-align: center; margin: 3px 0; color: #0f172a; }}
+            h2 {{ font-size: 10.5pt; border-bottom: 2px solid #0284c7; padding-bottom: 2px; margin-top: 14px; margin-bottom: 6px; color: #0f172a; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 8pt; }}
+            th {{ background: #f1f5f9; padding: 4px 6px; border: 1px solid #cbd5e1; text-align: left; }}
+            td {{ padding: 4px 6px; border: 1px solid #cbd5e1; }}
             .btn-print {{
                 background: #0284c7; color: white; padding: 10px 22px; font-weight: bold;
                 border: none; border-radius: 6px; cursor: pointer; font-size: 13px;
             }}
             .placa-box {{
-                border: 2px solid #000; padding: 12px; width: 320px; margin: 15px auto;
+                border: 2px solid #000; padding: 10px; width: 310px; margin: 10px auto;
                 text-align: center; background: #fafafa;
+            }}
+            .pagina-dos-flex {{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                min-height: 780px;
             }}
         </style>
     </head>
     <body>
-        <div class="no-print" style="text-align:center; margin-bottom:20px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+        <div class="no-print" style="text-align:center; margin-bottom:15px; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
             <button class="btn-print" onclick="window.print()">🖨️ {'Print / Save as Official PDF' if en_ingles else 'Guardar Expediente como PDF Oficial'}</button>
-            <p style="font-size:11px; color:#64748b; margin-top:5px;">{'Select: Destination -> Save as PDF in your print dialog.' if en_ingles else 'En la ventana de impresión selecciona: Guardar como PDF.'}</p>
+            <p style="font-size:11px; color:#64748b; margin-top:4px;">{'Select: Destination -> Save as PDF in your print dialog.' if en_ingles else 'En la ventana de impresión selecciona: Guardar como PDF.'}</p>
         </div>
 
-        <!-- ENCABEZADO Y PORTADA -->
-        <div style="border: 1px solid #000; padding: 12px 20px; text-align: center; margin-bottom: 15px;">
-            <div class="ce-mark">CE</div>
-            <h1>{t_doc}</h1>
-            <p style="font-size:10pt; margin:4px 0;"><strong>{t_reg}</strong></p>
-            <hr style="margin:12px 0;">
-            <p style="font-size:10pt; margin:3px 0;"><strong>{'MACHINERY DESIGNATION' if en_ingles else 'DENOMINACIÓN DE LA MÁQUINA'}:</strong> {datos['denominacion']}</p>
-            <p style="font-size:9.5pt; margin:3px 0;"><strong>{'MODEL / CODE' if en_ingles else 'MODELO'}:</strong> {datos['modelo']} | <strong>S/N:</strong> {datos['serie']}</p>
-            <p style="font-size:9.5pt; margin:3px 0;"><strong>{'LEGAL MANUFACTURER' if en_ingles else 'FABRICANTE'}:</strong> {datos['fabricante']}</p>
-            <p style="font-size:8.5pt; color:#64748b; margin:3px 0;"><strong>{'DATE OF ISSUE' if en_ingles else 'FECHA DE EMISIÓN'}:</strong> {fecha_hoy}</p>
-        </div>
-
-        <!-- SECCIÓN 1: ESPECIFICACIONES TÉCNICAS -->
-        <h2>{t_sec1}</h2>
-        <table>
-            <tr><th width="30%">{'Manufacturer / Legal Entity' if en_ingles else 'Fabricante'}:</th><td width="70%">{datos['fabricante']} ({datos['cif']})</td></tr>
-            <tr><th>{'Manufacturing Plant Address' if en_ingles else 'Dirección de Fabricación'}:</th><td>{datos['direccion']}</td></tr>
-            <tr><th>{'Chartered Technical Engineer' if en_ingles else 'Ingeniero Responsable Técnico'}:</th><td>{datos['ingeniero']} (ID: {datos['colegiado']})</td></tr>
-            <tr><th>{'Installed Electric Power' if en_ingles else 'Potencia Eléctrica Instalada'}:</th><td>{datos['potencia']} kW</td></tr>
-            <tr><th>{'Nominal Voltage & Frequency' if en_ingles else 'Tensión y Frecuencia'}:</th><td>{datos['tension']} V | {datos['frecuencia']} Hz ({datos['fases']})</td></tr>
-            <tr><th>{'Pneumatic Supply Pressure' if en_ingles else 'Presión Neumática'}:</th><td>{datos['presion']} bar</td></tr>
-            <tr><th>{'Year of Construction' if en_ingles else 'Año de Construcción'}:</th><td>{datos['anio']}</td></tr>
-        </table>
-
-        <!-- SECCIÓN 2: EVALUACIÓN Y REDUCCIÓN DE RIESGOS -->
-        <h2>{t_sec2}</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th width="22%">{'Hazard Zone & Risk' if en_ingles else 'Zona y Peligro'}</th>
-                    <th width="15%">{'Applied Standard' if en_ingles else 'Norma Aplicada'}</th>
-                    <th width="12%">{'Initial Risk' if en_ingles else 'Riesgo Inicial'}</th>
-                    <th width="8%">PLr</th>
-                    <th width="28%">{'Engineering Safeguard Applied' if en_ingles else 'Medida de Ingeniería'}</th>
-                    <th width="15%">{'Residual Risk' if en_ingles else 'Riesgo Residual'}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {filas_tabla}
-            </tbody>
-        </table>
-
-        {bloque_bloqueo}
-
-        <!-- SECCIÓN 3: PLACA CE METÁLICA -->
-        <h2>{t_sec3}</h2>
-        <div class="placa-box">
-            <div style="font-size:22pt; font-weight:bold; letter-spacing:-2px;">CE</div>
-            <p style="margin:2px 0; font-size:9.5pt; font-weight:bold;">{datos['fabricante']}</p>
-            <p style="margin:2px 0; font-size:7.5pt;">{datos['direccion']}</p>
-            <hr style="margin:5px 0;">
-            <div style="{blur_placa_pdf}">
-                <p style="margin:2px 0; font-size:8pt; text-align:left;"><strong>TYPE / MOD:</strong> {datos['modelo']}</p>
-                <p style="margin:2px 0; font-size:8pt; text-align:left;"><strong>S/N:</strong> {datos['serie']} &nbsp;|&nbsp; <strong>YEAR:</strong> {datos['anio']}</p>
-                <p style="margin:2px 0; font-size:8pt; text-align:left;"><strong>POWER:</strong> {datos['potencia']} kW &nbsp;|&nbsp; <strong>VOLTAGE:</strong> {datos['tension']} V</p>
+        <!-- ==================== PÁGINA 1: FICHA Y MATRIZ ==================== -->
+        <div>
+            <!-- ENCABEZADO Y PORTADA -->
+            <div style="border: 1px solid #000; padding: 10px 18px; text-align: center; margin-bottom: 10px;">
+                <div class="ce-mark">CE</div>
+                <h1>{t_doc}</h1>
+                <p style="font-size:9.5pt; margin:2px 0;"><strong>{t_reg}</strong></p>
+                <hr style="margin:8px 0;">
+                <p style="font-size:9.5pt; margin:2px 0;"><strong>{'MACHINERY DESIGNATION' if en_ingles else 'DENOMINACIÓN DE LA MÁQUINA'}:</strong> {datos['denominacion']}</p>
+                <p style="font-size:9pt; margin:2px 0;"><strong>{'MODEL / CODE' if en_ingles else 'MODELO'}:</strong> {datos['modelo']} | <strong>S/N:</strong> {datos['serie']}</p>
+                <p style="font-size:9pt; margin:2px 0;"><strong>{'LEGAL MANUFACTURER' if en_ingles else 'FABRICANTE'}:</strong> {datos['fabricante']}</p>
+                <p style="font-size:8pt; color:#64748b; margin:2px 0;"><strong>{'DATE OF ISSUE' if en_ingles else 'FECHA DE EMISIÓN'}:</strong> {fecha_hoy}</p>
             </div>
+
+            <!-- SECCIÓN 1: ESPECIFICACIONES TÉCNICAS -->
+            <h2>{t_sec1}</h2>
+            <table>
+                <tr><th width="30%">{'Manufacturer / Legal Entity' if en_ingles else 'Fabricante'}:</th><td width="70%">{datos['fabricante']} ({datos['cif']})</td></tr>
+                <tr><th>{'Manufacturing Plant Address' if en_ingles else 'Dirección de Fabricación'}:</th><td>{datos['direccion']}</td></tr>
+                <tr><th>{'Chartered Technical Engineer' if en_ingles else 'Ingeniero Responsable Técnico'}:</th><td>{datos['ingeniero']} (ID: {datos['colegiado']})</td></tr>
+                <tr><th>{'Installed Electric Power' if en_ingles else 'Potencia Eléctrica Instalada'}:</th><td>{datos['potencia']} kW</td></tr>
+                <tr><th>{'Nominal Voltage & Frequency' if en_ingles else 'Tensión y Frecuencia'}:</th><td>{datos['tension']} V | {datos['frecuencia']} Hz ({datos['fases']})</td></tr>
+                <tr><th>{'Pneumatic Supply Pressure' if en_ingles else 'Presión Neumática'}:</th><td>{datos['presion']} bar</td></tr>
+                <tr><th>{'Year of Construction' if en_ingles else 'Año de Construcción'}:</th><td>{datos['anio']}</td></tr>
+            </table>
+
+            <!-- SECCIÓN 2: EVALUACIÓN Y REDUCCIÓN DE RIESGOS -->
+            <h2>{t_sec2}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="22%">{'Hazard Zone & Risk' if en_ingles else 'Zona y Peligro'}</th>
+                        <th width="15%">{'Applied Standard' if en_ingles else 'Norma Aplicada'}</th>
+                        <th width="12%">{'Initial Risk' if en_ingles else 'Riesgo Inicial'}</th>
+                        <th width="8%">PLr</th>
+                        <th width="28%">{'Engineering Safeguard Applied' if en_ingles else 'Medida de Ingeniería'}</th>
+                        <th width="15%">{'Residual Risk' if en_ingles else 'Riesgo Residual'}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_tabla}
+                </tbody>
+            </table>
+
+            {bloque_bloqueo}
         </div>
 
-        <!-- SECCIÓN 4: DECLARACIÓN UE DE CONFORMIDAD -->
-        <div class="seccion-firmas">
-            <h2 style="margin-top:20px;">{t_sec4}</h2>
-            <div style="{blur_declaracion}">
-                <p style="font-size:8.5pt; text-align:justify; margin-bottom:12px;">
-                    {'The undersigned declares on behalf of the manufacturer, under sole responsibility, that the machinery described herein fulfills all relevant Essential Health and Safety Requirements laid down in Regulation (EU) 2023/1230 of the European Parliament and of the Council on machinery, as well as Directive 2014/30/EU (EMC) and Directive 2014/35/EU (Low Voltage).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
-                </p>
-                <p style="font-size:8.5pt;"><strong>{'Authorized Person to compile the Technical Dossier' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (ID: {datos['colegiado']}).</p>
-                
-                <div style="margin-top:35px; display:flex; justify-content:space-between;">
-                    <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
-                        <strong>{'Authorized Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
-                        <span style="color:#64748b; font-size:7.5pt;">{datos['fabricante']}</span>
+        <!-- ==================== PÁGINA 2: PLACA, DECLARACIÓN Y FIRMAS (FLEX EQUILIBRADO) ==================== -->
+        <div class="salto-pagina-oficial pagina-dos-flex">
+            <div>
+                <!-- SECCIÓN 3: PLACA CE METÁLICA -->
+                <h2 style="margin-top:5px;">{t_sec3}</h2>
+                <div class="placa-box">
+                    <div style="font-size:20pt; font-weight:bold; letter-spacing:-2px;">CE</div>
+                    <p style="margin:1px 0; font-size:9pt; font-weight:bold;">{datos['fabricante']}</p>
+                    <p style="margin:1px 0; font-size:7pt;">{datos['direccion']}</p>
+                    <hr style="margin:4px 0;">
+                    <div style="{blur_placa_pdf}">
+                        <p style="margin:1px 0; font-size:7.5pt; text-align:left;"><strong>TYPE / MOD:</strong> {datos['modelo']}</p>
+                        <p style="margin:1px 0; font-size:7.5pt; text-align:left;"><strong>S/N:</strong> {datos['serie']} &nbsp;|&nbsp; <strong>YEAR:</strong> {datos['anio']}</p>
+                        <p style="margin:1px 0; font-size:7.5pt; text-align:left;"><strong>POWER:</strong> {datos['potencia']} kW &nbsp;|&nbsp; <strong>VOLTAGE:</strong> {datos['tension']} V</p>
                     </div>
-                    <div style="width:45%; border-top:1px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
-                        <strong>{'Chartered Industrial Engineer' if en_ingles else 'Firma Ingeniero Industrial'}</strong><br>
-                        <span style="color:#64748b; font-size:7.5pt;">{datos['ingeniero']} (ID: {datos['colegiado']})</span>
+                </div>
+
+                <!-- SECCIÓN 4: DECLARACIÓN UE DE CONFORMIDAD -->
+                <h2 style="margin-top:20px;">{t_sec4}</h2>
+                <div style="{blur_declaracion}">
+                    <p style="font-size:8.5pt; text-align:justify; margin-bottom:12px; line-height:1.4;">
+                        {'The undersigned declares on behalf of the manufacturer, under sole responsibility, that the machinery described herein fulfills all relevant Essential Health and Safety Requirements laid down in Regulation (EU) 2023/1230 of the European Parliament and of the Council on machinery, as well as Directive 2014/30/EU (EMC) and Directive 2014/35/EU (Low Voltage).' if en_ingles else 'El abajo firmante, en representación del fabricante, declara bajo su exclusiva responsabilidad que la máquina descrita cumple con todos los Requisitos Esenciales de Seguridad y Salud establecidos en el Reglamento (UE) 2023/1230 de máquinas, así como con la Directiva 2014/30/UE (CEM) y 2014/35/UE (Baja Tensión).'}
+                    </p>
+                    <p style="font-size:8.5pt;"><strong>{'Authorized Person to compile the Technical Dossier' if en_ingles else 'Persona facultada para compilar el expediente técnico'}:</strong> {datos['ingeniero']} (ID: {datos['colegiado']}).</p>
+                    
+                    <div style="margin-top:55px; display:flex; justify-content:space-between;">
+                        <div style="width:44%; border-top:1.5px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
+                            <strong>{'Authorized Legal Representative' if en_ingles else 'Firma Representante Legal'}</strong><br>
+                            <span style="color:#64748b; font-size:7.5pt;">{datos['fabricante']}</span>
+                        </div>
+                        <div style="width:44%; border-top:1.5px solid #000; padding-top:6px; text-align:center; font-size:8.5pt;">
+                            <strong>{'Chartered Industrial Engineer' if en_ingles else 'Firma Ingeniero Industrial'}</strong><br>
+                            <span style="color:#64748b; font-size:7.5pt;">{datos['ingeniero']} (ID: {datos['colegiado']})</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD (AL PIE DE PÁGINA) -->
-        <div style="margin-top: 90px; border-top: 1.5px solid #94a3b8; padding-top: 8px; font-size: 6.8pt; color: #64748b; text-align: justify; line-height: 1.35; page-break-inside: avoid;">
-            <strong>AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD:</strong> Este documento ha sido estructurado mediante la plataforma de cálculo computacional SafeMachine CE de conformidad con los principios metodológicos de la norma UNE-EN ISO 12100 y el Reglamento (UE) 2023/1230. La validez legal definitiva de la evaluación de riesgos, la verificación de los componentes de seguridad y la emisión formal del Marcado CE quedan supeditadas a la revisión técnica, validación presencial y firma colegiada por parte de la persona facultada por el fabricante legal del equipo.
+            <!-- PIE DE PÁGINA ANCLADO AL FONDO EXACTO DEL A4 -->
+            <div style="border-top: 1.5px solid #94a3b8; padding-top: 8px; font-size: 6.8pt; color: #64748b; text-align: justify; line-height: 1.35; margin-top: 40px; margin-bottom: 5px;">
+                <strong>AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD:</strong> Este documento ha sido estructurado mediante la plataforma de cálculo computacional SafeMachine CE de conformidad con los principios metodológicos de la norma UNE-EN ISO 12100 y el Reglamento (UE) 2023/1230. La validez legal definitiva de la evaluación de riesgos, la verificación de los componentes de seguridad y la emisión formal del Marcado CE quedan supeditadas a la revisión técnica, validación presencial y firma colegiada por parte de la persona facultada por el fabricante legal del equipo.
+            </div>
         </div>
     </body>
     </html>
@@ -860,7 +877,7 @@ titulos_tabs = [
 ]
 tab_maquina, tab_hrn, tab_plr, tab_placa, tab_expediente = st.tabs(titulos_tabs)
 
-# --- PESTAÑA 1: DATOS GENERALES (PRECARGADOS CON EL CASO REAL) ---
+# --- PESTAÑA 1: DATOS GENERALES ---
 with tab_maquina:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader(
@@ -996,19 +1013,19 @@ with tab_hrn:
             lo = st.selectbox(
                 "Likelihood (LO):" if es_en else "Probabilidad (LO):",
                 list(VALORES_LO.keys()),
-                index=4,  # Probable (8)
+                index=4,
             )
         with c_p2:
             fe = st.selectbox(
                 "Frequency (FE):" if es_en else "Frecuencia (FE):",
                 list(VALORES_FE.keys()),
-                index=5,  # Continua (5)
+                index=5,
             )
         with c_p3:
             dph = st.selectbox(
                 "Potential Harm (DPH):" if es_en else "Daño potencial (DPH):",
                 list(VALORES_DPH.keys()),
-                index=3,  # Amputación mano / Pérdida ojo (7)
+                index=3,
             )
         with c_p4:
             np = st.selectbox(
@@ -1016,7 +1033,7 @@ with tab_hrn:
                 if es_en
                 else "Personas expuestas (NP):",
                 list(VALORES_NP.keys()),
-                index=0,  # 1 o 2 personas (1)
+                index=0,
             )
 
         hrn_calc_inicial = (
@@ -1098,7 +1115,7 @@ with tab_hrn:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PESTAÑA 3: DETERMINACIÓN DEL PLr (ISO 13849-1) - CORREGIDO ---
+# --- PESTAÑA 3: DETERMINACIÓN DEL PLr (ISO 13849-1) ---
 with tab_plr:
     st.markdown('<div class="card-box">', unsafe_allow_html=True)
     st.subheader(
@@ -1168,7 +1185,6 @@ with tab_plr:
         st.markdown(
             "#### Required Safety Level:" if es_en else "#### Nivel Exigido:"
         )
-        # F-string corregido en un solo bloque para evitar imprimir '{plr_resultado}' literal
         st.markdown(
             f"""<div style="background:#e0f2fe; color:#0369a1; border:2px solid #0284c7; padding:12px; border-radius:8px; font-size:24px; font-weight:800; text-align:center;">{plr_resultado}</div>""",
             unsafe_allow_html=True,
