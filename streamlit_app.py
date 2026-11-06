@@ -682,8 +682,8 @@ def generar_html_expediente(
             </div>
         </div>
 
-        <!-- AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD -->
-        <div style="margin-top: 35px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 7pt; color: #64748b; text-align: justify; line-height: 1.3;">
+        <!-- AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD (AL PIE DE PÁGINA) -->
+        <div style="margin-top: 90px; border-top: 1.5px solid #94a3b8; padding-top: 8px; font-size: 6.8pt; color: #64748b; text-align: justify; line-height: 1.35; page-break-inside: avoid;">
             <strong>AVISO LEGAL Y LIMITACIÓN DE RESPONSABILIDAD:</strong> Este documento ha sido estructurado mediante la plataforma de cálculo computacional SafeMachine CE de conformidad con los principios metodológicos de la norma UNE-EN ISO 12100 y el Reglamento (UE) 2023/1230. La validez legal definitiva de la evaluación de riesgos, la verificación de los componentes de seguridad y la emisión formal del Marcado CE quedan supeditadas a la revisión técnica, validación presencial y firma colegiada por parte de la persona facultada por el fabricante legal del equipo.
         </div>
     </body>
